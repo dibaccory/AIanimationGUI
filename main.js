@@ -13,3 +13,26 @@ const MNIST_LABELS_PATH = 'https://storage.googleapis.com/learnjs-data/model-bui
 const img = new Image();
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
+
+Array.prototype.last = () => this[this.length - 1];
+
+
+
+//I kept using 3D loops so I made a function to clean up the code
+function v3loop(v, f)
+{
+  for(let k=0; k<v.z; k++)
+    for(let j=0; j<v.y; j++)
+      for(let i=0; i<v.x; i++)
+        f(i,j,k);
+}
+
+//Check if x is within [a,b]
+var inBounds = (x, a, b) => { return (x >= a && x <= b)};
+
+function createNode()
+{
+  let geometry = new THREE.BoxGeometry(1,1,1);
+  let material = new THREE.MeshBasicMaterial();
+  return new THREE.Mesh( geometry, material );
+}

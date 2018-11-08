@@ -1,4 +1,4 @@
-class CNN
+class Network
 {
   constructor()
   {
