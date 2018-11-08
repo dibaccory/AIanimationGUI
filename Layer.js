@@ -76,7 +76,7 @@ class Layer
         break;
 
       case (this instanceof Convolution):
-        /*Get weights of filter*/
+        /*TODO:Get weights of filter*/
         break;
 
       case this.name=="output"):
@@ -106,7 +106,7 @@ class Convolution extends Layer
   //volume in this case is (N, N, numFilters). We need to get this volume from TensorFlow model
   constructor(filter, offset, stride, padding, dilate, reLU)
   {
-    super( "hidden", filter, offset);
+    super( "(hidden) Convolutional Layer", filter, offset);
     this.size = filter.x;
     this.padding = padding;
     this.dilate = (dilate) ? dilate : 1;
@@ -132,23 +132,24 @@ class Convolution extends Layer
     {
       x: (input.volume.x − this.size + 2*this.padding) / this.size + 1,
       y: (input.volume.y − this.size + 2*this.padding) / this.size + 1,
-      z: this.volume.z;
+      z: super.volume.z;
     };
 
-    let outputLayer = new Layer("convolved layer", vout, this.offset + LAYER_GAP);
+    let outputLayer = new Layer("convolved layer", vout, super.offset + LAYER_GAP);
 
     //Represent stride bounds as object
     let vstride =
     {
       x: (input.volume.x - this.size) / this.size + 1,
       y: (input.volume.y - this.size) / this.size + 1,
-      z: this.volume.z,
+      z: super.volume.z,
     };
 
     for(let channel=0; channel<input.volume.z; channel++)
       v3loop(vstride, (i, j, k) =>
       {
-        let a,b, paddedNode;
+        let a = [], b =[];
+        let addedNode;
         //Filter node at fj'th column, fi'th row
         for(let fj=0; fj<this.size; fj++)
         for(let fi=0; fi<this.size; fi++)
@@ -162,19 +163,19 @@ class Convolution extends Layer
             && inBounds( ( i*this.stride - this.padding + (fi+di) ), 0, i ) )
             {
               a.push(input.nodes[channel][j*this.stride - this.padding + (fj+dj)][i*this.stride - this.padding + (fi+di)]);
-              b.push(this.nodes[k][fj][fi]);
+              b.push(super.nodes[k][fj][fi]);
 
             }
             //if the filter is recieving padding, push zeroed node to array a
             else
             {
-              paddedNode = createNode();
-              paddedNode.material.color = new THREE.Color(0, 0, 0);
-              a.push(paddedNode);
-              b.push(this.nodes[k][fj][fi]);
+              addedNode = createNode();
+              addedNode.material.color = new THREE.Color(0, 0, 0);
+              a.push(addedNode);
+              b.push(super.nodes[k][fj][fi]);
             }
 
-            //path(in.last().position, fn.last().position);
+            //path(a.last().position, b.last().position);
           }
         }
         a = a.map(x => x.material.color);
@@ -182,6 +183,8 @@ class Convolution extends Layer
         let result = this.gemm(a, b);
         outputLayer.addNode(result, i, j, k);
       });
+      //returns resulting layer so Network can use this as the input for the next hidden layer
+      return outputLayer;
   }
 
   //This is in 3-channel to out 3-channel.
@@ -209,38 +212,21 @@ class Convolution extends Layer
 
 class Pool extends Layer
 {
-  constructor(volume, stride, f)
+  //volume is {x: P, y: P, z: input.volume.z} where P is partition size
+  constructor(volume, offset, stride, f)
   {
-    super("hidden", volume);
+    super("(hidden) Pooling layer", volume, offset);
     this.size = volume.x;
     this.stride = stride;
-    this.f = (f) ? f : "max"; //set max-pooling as default
+    this.pool = f; //set max-pooling as default
   }
 
   //uses pooling method f on array a
-  pool(f, a)
-  {
-    let result;
-    switch (f)
-    {
-      case "min":
-        result = Math.Min(a);
-        break;
 
-      case "max":
-        result = Math.Max(a);
-        break;
-
-      default:
-        result = Math.Max(a);
-        break;
-    }
-    return result;
-  }
   //returns volume of output
   /*
   forward pass:
-  path(input.nodes[c][j*stride - padding][k*stride - padding], hidden.nodes[i][j][k].position)
+
   */
   forward(input)
   {
@@ -249,44 +235,66 @@ class Pool extends Layer
     {
       x: (input.volume.x − this.size) / this.size + 1,
       y: (input.volume.y − this.size) / this.size + 1,
-      z: this.volume.z;
+      z: super.volume.z;
     };
-    let outputLayer = new Layer("pooled layer", vout, this.offset + LAYER_GAP);
+    let outputLayer = new Layer("pooled layer", vout, super.offset + LAYER_GAP);
 
     //Represent stride bounds as object
     let vstride =
     {
       x: (input.volume.x - this.size) / this.size + 1,
       y: (input.volume.y - this.size) / this.size + 1,
-      z: this.volume.z,
+      z: super.volume.z,
     };
 
     v3loop(vstride, (i,j,k) =>
     {
-      let a;
-      //Filter node at vj'th column, fi'th row
+      let a = [];
+      //Filter node at fj'th column, fi'th row
       for(let fj=0; fj<this.size; fj++)
       for(let fi=0; fi<this.size; fi++)
       {
         a.push(input.nodes[k][j*this.stride + fj][i*this.stride + fi]);
       }
       //Do the pooling computation and add result to new node in resulting layer
-      let result = pool(this.f, a);
+      let result = this.pool(a);
       outputLayer.addNode(result, i, j, k);
+      //path(input.nodes[k][j*stride + fj][i*stride + fi].position, super.nodes[k][j][i].position)
     });
+    //returns resulting layer so Network can use this as the input for the next hidden layer
+    return outputLayer;
   }
 }
 
 class Dense extends Layer
 {
-  constructor(name, volume)
+  //dense layer volume should be {x: 1, y: N, z: 1} where N is # nodes
+  //weights = array of size N... [].concat(...kernel.nodes) where kernel = tf.dense.kernel or wherever you get it.
+  constructor(name, volume, weights, offset, f)
   {
-    super("hidden", volume)
+    super("hidden", volume, offset);
+    this.weights = weights;
+    this.activation = f;
   }
 
-  //returns volume of output
-  forward()
-  {
 
+  //returns array of propogated values
+  forward(input)
+  {
+    let propogatedValues = [];
+    for(let n=0; n<super.volume.y; n++)
+    {
+      let a = [];
+      v3loop(input.volume, (i, j, k) =>
+      {
+        //pushes color*weight[current_dense_node] for every node in the input volume
+        a.push(input.nodes[k][j][i].material.color.clone().addScalar(weights[n]));
+      });
+      //summation of colors
+      a.reduce( (sum, x) => {sum.add(x);} );
+      propogatedValues.push(this.activation(a));
+
+    }
+    return propogatedValues;
   }
 }
