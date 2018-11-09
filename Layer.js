@@ -114,17 +114,6 @@ class Convolution extends Layer
   }
 
   //returns volume of output
-  /*
-  forward pass: LOOK AT DARKNET to see bounds and shit
-
-
-  output.volume.x=(input.volume.x−hidden.size+2*hidden.padding)/hidden.size+1
-  output.volume.y=(input.volume.y−hidden.size+2*hidden.padding)/hidden.size+1
-  (i.e. width and height are computed equally by symmetry)
-  output.volume.z= this.volume.z
-  */
-
-
   forward(input)
   {
     //output dimensions
@@ -178,6 +167,7 @@ class Convolution extends Layer
             //path(a.last().position, b.last().position);
           }
         }
+        //TODO: Need to incorporate the activation function (commonly reLU or leakyReLU) in this calculation if it is declared
         a = a.map(x => x.material.color);
         b = b.map(x => x.material.color);
         let result = this.gemm(a, b);
@@ -198,7 +188,7 @@ class Convolution extends Layer
     let c = a.map( x =>
     {
       let y = b.shift();
-      return new THREE.Color(x.R * y.R, x.G * y.G, x.B * y.B); //got a bad feeling about this, cap'n
+      return new THREE.Color(x.R * y.R, x.G * y.G, x.B * y.B); //got a bad feeling about this one, cap'n
     });
     let red   = c.reduce((sum, x) => {sum + x.R;});
     let green = c.reduce((sum, x) => {sum + x.G;});
@@ -276,7 +266,6 @@ class Dense extends Layer
     this.weights = weights;
     this.activation = f;
   }
-
 
   //returns array of propogated values
   forward(input)
