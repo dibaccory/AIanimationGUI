@@ -1,0 +1,112 @@
+<!-- Jonathon Rice jo023439, COP 4720 -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>Neural Network Builder</title>
+<!-- 		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style> -->
+		<script src="https://threejs.org/build/three.js"></script>
+		<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script>
+		<script>
+
+			function mainFunction()
+          	{
+				// // Define function
+				// function predict(input) {
+				//   // y = a * x ^ 2 + b * x + c
+				//   // More on tf.tidy in the next section
+				//   return tf.tidy(() => {
+				//     const x = tf.scalar(input);
+
+				//     const ax2 = a.mul(x.square());
+				//     const bx = b.mul(x);
+				//     const y = ax2.add(bx).add(c);
+
+				//     return y;
+				//   });
+				// }
+
+				// // Define constants: y = 2x^2 + 4x + 8
+				// const a = tf.scalar(2);
+				// const b = tf.scalar(4);
+				// const c = tf.scalar(8);
+
+				// // Predict output for input of 2
+				// const result = predict(2);
+				// result.print() // Output: 24
+
+				// const input1 = tf.input({shape: [10]});
+				// const input2 = tf.input({shape: [20]});
+				// const dense1 = tf.layers.dense({units: 4}).apply(input1);
+				// const dense2 = tf.layers.dense({units: 8}).apply(input2);
+				// const concat = tf.layers.concatenate().apply([dense1, dense2]);
+				// const output =
+				//      tf.layers.dense({units: 3, activation: 'softmax'}).apply(concat);
+
+				// const model = tf.model({inputs: [input1, input2], outputs: output});
+				// model.summary();
+
+				var model;
+
+				// function createLogEntry(entry) 
+				// {
+				// 	document.getElementById('log').innerHTML += '<br>' + entry;
+				// }
+
+				// function createModel() 
+				// {
+					// createLogEntry('Create model ...');
+					model = tf.sequential();
+					// createLogEntry('Model Created');
+
+					// createLogEntry('Add layers ...');
+					model.add(tf.layers.conv2d({
+						inputShape: [28, 28, 1],
+						kernelSize: 5,
+						filters: 8,
+						strides: 1,
+						activation: 'relu',
+						kernelInitializer: 'VarianceScaling'
+					}));
+
+					model.add(tf.layers.maxPooling2d({
+						poolSize: [2,2],
+						strides: [2,2]
+					}));
+
+					model.add(tf.layers.conv2d({
+						kernelSize: 5,
+						filters: 16,
+						strides: 1,
+						activation: 'relu',
+						kernelInitializer: 'VarianceScaling'
+					}));
+
+					model.add(tf.layers.maxPooling2d({
+						poolSize: [2,2],
+						strides: [2,2]
+					}));
+
+					model.add(tf.layers.flatten());
+					model.add(tf.layers.dense({
+						units: 10,
+						kernelInitializer: 'VarianceScaling',
+						activation: 'softmax'
+					}))
+
+					// createLogEntry('Layers created');
+					// model.summary();
+					// model.getLayer(0).print();
+					console.log(model.getWeights());
+					model.layers[0].getWeights()[0].print()
+				// }
+			}
+		</script>
+	</head>
+	<body onload="mainFunction();">
+	</body>
+</html>
