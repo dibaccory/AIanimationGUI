@@ -11,9 +11,16 @@
 	</head>
 	<script src="https://threejs.org/build/three.js"></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="js/cameras/CinematicCamera.js"></script>
 	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
 	<script>
-		function draw(p1,p2)
+
+		// Some global variables
+		var camera, racaster, renderer, scene;
+		var mouse = new THREE.Vector2();
+		var radius = 100, theta = 0;
+
+		function draw(p1, p2)
 		{
 			var mat = new THREE.LineBasicMaterial({color:0x888888})
 			var geo = new THREE.Geometry()
@@ -44,8 +51,8 @@
 		{
 
 		}
-		// Make a request for the MNIST sprited image.
 
+		// Make a request for the MNIST sprited image.
 		const imgRequest = new Promise((resolve, reject) =>
 		{
 			img.crossOrigin = '';
@@ -228,27 +235,30 @@
 				// console.log(img1);
 		});
 
-		function mainFunction()
-		{
-			var renderer = new THREE.WebGLRenderer( { antialias: true } );
+		function mainFunction() {
+
+			// Renderer stuff
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.setPixelRatio( window.devicePixelRatio );
-
-			renderer.setClearColor (0x888888, 1);
+			renderer.setClearColor ( 0x888888, 1 );
 			document.body.appendChild( renderer.domElement );
 
-			var scene = new THREE.Scene();
-
+			// Camera stuff
 			var aspect = window.innerWidth / window.innerHeight;
-			var camera = new THREE.PerspectiveCamera( 30, aspect, 1, 1000 );
-			camera.position.z = 100;
-			camera.rotation.z = 90;
-
-			scene.add(camera);
+			camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 100  );
+			camera.setLens( 5 );
+			camera.position.x = 5;
+			camera.position.y = 5;
+			camera.position.z = 50;
 
 			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 1.0 );
 
+			scene = new THREE.Scene();
+
+			// Add canera and light to the scene
 			scene.add( ambientLight );
+			scene.add( camera );
 
 			var geometry = new THREE.BoxGeometry( 1, 1, 1);
 			for(let t=0; t<4; t++)
@@ -283,20 +293,47 @@
 				}
 			}
 
-			var render = function () {
+			// A Raycaster can tell what object is the mouse hovering over
+			// Currently not implemented
+			raycaster = new THREE.Raycaster();
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				
+				render();
+			}
+
+			function render() {
+
+				// First if condition is to have it zoom in and then rotate.
+				// The else condition to have it pan sideways
+				if (theta < 90)
+				{
+					theta += 0.5;
+					// camera.position.x = radius * Math.sin( THREE.Math.degToRad( theta ) );
+					// camera.position.y = radius * Math.sin( THREE.Math.degToRad( theta ) );
+					camera.position.z = radius * Math.cos( THREE.Math.degToRad( theta ) );
+					camera.lookAt( scene.position );
+				}
+				else
+				{
+					camera.position.z -= 0.5;
+				}
+
 				renderer.render( scene, camera );
-			};
+			}
 
-			var cameraControls = new THREE.OrbitControls( camera, renderer.domElement  );
-			cameraControls.addEventListener("change",render,false)
+			var cameraControls = new THREE.OrbitControls( camera );
+			cameraControls.addEventListener( "change", animate );
 
-			render();
-			
+			animate();
+
 			var resize = function () {
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
-				render();
+				animate();
 			};
 
 			window.addEventListener( "resize", resize, false );
@@ -305,7 +342,7 @@
 	</script>
 	<body onload = "mainFunction();">
 	<h1>
-		testestestestsetsetset </br>
+		super cool awesome network animation </br>
 	</h1>
 	</body>
 </html>

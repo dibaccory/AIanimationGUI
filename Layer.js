@@ -133,7 +133,7 @@ class Convolution extends Layer
       y: (input.volume.y - this.size) / this.size + 1,
       z: super.volume.z,
     };
-
+    
     for(let channel=0; channel<input.volume.z; channel++)
       v3loop(vstride, (i, j, k) =>
       {
