@@ -246,7 +246,7 @@
 			{
 			    tf.tidy(() => 
 			    {
-			        const input_value = Array.from(batch.labels.argMax(1).dataSync());
+			        const expected_value = Array.from(batch.labels.argMax(1).dataSync());
 
 			        const div = document.createElement('div');
 			        div.className = 'prediction-div';
@@ -256,8 +256,8 @@
 			        const prediction_value = Array.from(output.argMax(1).dataSync());
 			        const image = batch.xs.slice([0, 0], [1, batch.xs.shape[1]]);
 
-			        console.log(input_value);
-			        console.log(prediction_value);
+					console.log(expected_value);
+					console.log(prediction_value);
 			    });
 			}
 
