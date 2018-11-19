@@ -34,7 +34,7 @@ class Layer
     v3loop(volume, (i,j,k) =>
     {
       colors = this.inputToRGB(data, feed); // Get color values from input type
-      addNode(color, i, j, k);
+      this.addNode(color, i, j, k);
       feed++;
     });
   }
@@ -79,7 +79,7 @@ class Layer
         /*TODO:Get weights of filter*/
         break;
 
-      case this.name == "output":
+      case this.name=="output"):
         /*ALL WHITE or Different color for each node*/
         break;
 
@@ -124,7 +124,7 @@ class Convolution extends Layer
       z: super.volume.z;
     };
 
-    let outputLayer = new Layer("convolved layer", vout, super.offset + LAYER_GAP);
+    let outputLayer = new Layer("feature map layer", vout, super.offset + LAYER_GAP);
 
     //Represent stride bounds as object
     let vstride =
@@ -135,10 +135,7 @@ class Convolution extends Layer
     };
     
     for(let channel=0; channel<input.volume.z; channel++)
-      v3loop(vstride, (i, j, k) =>
-      {
-        let a = [], b =[];
-        let addedNode;
+    {
         //Filter node at fj'th column, fi'th row
         for(let fj=0; fj<this.size; fj++)
         for(let fi=0; fi<this.size; fi++)
@@ -147,32 +144,37 @@ class Convolution extends Layer
           for(let dj=0; dj<this.dilate; dj++)
           for(let di=0; di<this.dilate; di++)
           {
-            //if the filter is recieving input data...
-            if(inBounds( ( j*this.stride - this.padding + (fj+dj) ), 0, j )
-            && inBounds( ( i*this.stride - this.padding + (fi+di) ), 0, i ) )
+            let a = [], b =[];
+            let addedNode;
+            //input layer
+            v3loop(vstride, (i, j, k) =>
             {
-              a.push(input.nodes[channel][j*this.stride - this.padding + (fj+dj)][i*this.stride - this.padding + (fi+di)]);
-              b.push(super.nodes[k][fj][fi]);
-
-            }
-            //if the filter is recieving padding, push zeroed node to array a
-            else
-            {
-              addedNode = createNode();
-              addedNode.material.color = new THREE.Color(0, 0, 0);
-              a.push(addedNode);
-              b.push(super.nodes[k][fj][fi]);
-            }
-
-            //path(a.last().position, b.last().position);
+              //if the filter is recieving input data...
+              if(inBounds( ( j*this.stride - this.padding + (fj+dj) ), 0, j )
+              && inBounds( ( i*this.stride - this.padding + (fi+di) ), 0, i ) )
+              {
+                a.push(input.nodes[channel][j*this.stride - this.padding + (fj+dj)][i*this.stride - this.padding + (fi+di)]);
+                b.push(super.nodes[k][fj][fi]);
+              }
+              //if the filter is recieving padding, push zeroed node to array a
+              else
+              {
+                addedNode = createNode();
+                addedNode.material.color = new THREE.Color(0, 0, 0);
+                a.push(addedNode);
+                b.push(super.nodes[k][fj][fi]);
+              }
+              //path(a.last().position, b.last().position);
+            });
           }
+          //TODO: Need to incorporate the activation function (commonly reLU or leakyReLU) in this calculation if it is declared
+          a = a.map(x => x.material.color);
+          b = b.map(x => x.material.color);
+          let result = this.convolve(a, b);
+          //result is new color. When you add this node, make a path from the (fi, fj, k) node in the kernel to the (i,j,k) node in the feature map
+          outputLayer.addNode(result, i, j, k);
         }
-        //TODO: Need to incorporate the activation function (commonly reLU or leakyReLU) in this calculation if it is declared
-        a = a.map(x => x.material.color);
-        b = b.map(x => x.material.color);
-        let result = this.gemm(a, b);
-        outputLayer.addNode(result, i, j, k);
-      });
+    }
       //returns resulting layer so Network can use this as the input for the next hidden layer
       return outputLayer;
   }
@@ -183,7 +185,7 @@ class Convolution extends Layer
   Separate Illuminesce and Chromium (look this up lol)
   */
   //group element matrix multiplication
-  gemm(a, b)
+  convolve(a, b)
   {
     let c = a.map( x =>
     {
