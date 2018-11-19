@@ -34,7 +34,7 @@ class Layer
     v3loop(volume, (i,j,k) =>
     {
       colors = this.inputToRGB(data, feed); // Get color values from input type
-      addNode(color, i, j, k);
+      this.addNode(color, i, j, k);
       feed++;
     });
   }
