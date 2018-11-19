@@ -232,6 +232,7 @@
 
 			    }
 			    console.log('Training complete');
+			    await model.save('localstorage://my-model-1');
 			}
 
 			async function main() 
