@@ -79,7 +79,7 @@ class Layer
         /*TODO:Get weights of filter*/
         break;
 
-      case this.name=="output"):
+      case this.name == "output":
         /*ALL WHITE or Different color for each node*/
         break;
 
