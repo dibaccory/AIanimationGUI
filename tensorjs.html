@@ -10,8 +10,9 @@
 		</style> -->
 		<script src="https://threejs.org/build/three.js"></script>
 		<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script>
+		<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.3/dist/tf.min.js"></script>
 		<script type="module"> 
+
 			const IMAGE_SIZE = 784;
 			const NUM_CLASSES = 10;
 			const NUM_DATASET_ELEMENTS = 65000;
@@ -24,12 +25,6 @@
 			const MNIST_LABELS_PATH =
 			    'https://storage.googleapis.com/learnjs-data/model-builder/mnist_labels_uint8';
 
-			/**
-			 * A class that fetches the sprited MNIST dataset and returns shuffled batches.
-			 *
-			 * NOTE: This will get much easier. For now, we do data fetching and
-			 * manipulation manually.
-			 */
 			export class MnistData 
 			{
 			  constructor() 
@@ -226,9 +221,15 @@
 			            batch.xs, batch.labels, {batchSize: BATCH_SIZE, epochs: 1}
 			        );
 
-			        tf.dispose(batch);
+					tf.dispose(batch);
 
-			        await tf.nextFrame();
+					await tf.nextFrame();
+
+					if(i % 10 == 0)
+					{
+						console.log('Training...');
+					}
+
 			    }
 			    console.log('Training complete');
 			}
@@ -238,6 +239,7 @@
 			    createModel();
 			    await load();
 			    await train();
+			    await predict(data.nextTestBatch(BATCH_SIZE));
 			}
 
 			async function predict(batch) 
@@ -252,7 +254,10 @@
 			        const output = model.predict(batch.xs.reshape([-1, 28, 28, 1]));
 
 			        const prediction_value = Array.from(output.argMax(1).dataSync());
-			        const image = batch.xs.slice([0, 0], [1, batch.xs.shape[1]]);		 
+			        const image = batch.xs.slice([0, 0], [1, batch.xs.shape[1]]);
+
+			        console.log(input_value);
+			        console.log(prediction_value);
 			    });
 			}
 
