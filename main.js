@@ -36,3 +36,8 @@ function createNode()
   let material = new THREE.MeshBasicMaterial();
   return new THREE.Mesh( geometry, material );
 }
+
+function createPath()
+{
+  
+}
