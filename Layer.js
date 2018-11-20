@@ -1,4 +1,30 @@
 const NODE_GAP = 1.2;
+
+class Node
+{
+    constructor()
+    {
+        init();
+    }
+
+    init()
+    {
+        let geometry = new THREE.BoxGeometry(1,1,1);
+        let material = new THREE.MeshBasicMaterial();
+        this.obj = new THREE.Mesh( geometry, material );
+
+        this.paths = {from: [[]], to: this.obj.position};
+    }
+
+    //pos = [ Vector3 ]
+    addPaths(pos)
+    {
+        this.paths.from.push(pos);
+    }
+
+}
+
+
 const LAYER_GAP = 10;
 
 class Layer
@@ -11,16 +37,23 @@ class Layer
     this.offset = offset; //Float to add to the Z value (XY plane is AREA, Z is depth, so pipeline lines on Z axis)
   }
 
-  //creates a single node
-  addNode(color, i, j, k)
+  //creates a single node (paths optional)
+  addNode(color, i, j, k, paths)
   {
-    let node = creatNode();
-    node.material.color = color;
-    node.position
+    let node = new Node();
+    node.obj.material.color = color;
+    node.obj.position
       .set( NODE_GAP_SIZE*i,
             NODE_GAP_SIZE*(this.volume.y - j),
             NODE_GAP_SIZE*k + this.offset);
+
+    //if paths is not null
+    if(paths)
+    {
+      node.addPaths(paths);
+    }
     this.nodes[k][j][i].push(node);
+
   }
 
   //Creates a box for each node in this layer.
@@ -30,10 +63,10 @@ class Layer
   */
   generate(data)
   {
-    let color, node, feed;
+    let color, feed;
     v3loop(volume, (i,j,k) =>
     {
-      colors = this.inputToRGB(data, feed); // Get color values from input type
+      color = this.inputToRGB(data, feed); // Get color values from input type
       this.addNode(color, i, j, k);
       feed++;
     });
@@ -79,13 +112,14 @@ class Layer
         /*TODO:Get weights of filter*/
         break;
 
-      case this.name=="output"):
+      case (this.name=="output"):
         /*ALL WHITE or Different color for each node*/
         break;
 
       default:
         break;
     }
+
     return new THREE.Color(R, G, B);
   }
 
@@ -104,10 +138,10 @@ class Layer
 class Convolution extends Layer
 {
   //volume in this case is (N, N, numFilters). We need to get this volume from TensorFlow model
-  constructor(filter, offset, stride, padding, dilate, reLU)
+  constructor(volume, offset, stride, padding, dilate, reLU)
   {
-    super( "(hidden) Convolutional Layer", filter, offset);
-    this.size = filter.x;
+    super( "(hidden) Convolutional Layer", volume, offset);
+    this.size = volume.x;
     this.padding = padding;
     this.dilate = (dilate) ? dilate : 1;
     this.reLU = reLU;     //function
@@ -119,9 +153,9 @@ class Convolution extends Layer
     //output dimensions
     let vout =
     {
-      x: (input.volume.x − this.size + 2*this.padding) / this.size + 1,
-      y: (input.volume.y − this.size + 2*this.padding) / this.size + 1,
-      z: super.volume.z;
+      x: (input.volume.x - this.size + 2*this.padding) / this.size + 1,
+      y: (input.volume.y - this.size + 2*this.padding) / this.size + 1,
+      z: super.volume.z
     };
 
     let outputLayer = new Layer("feature map layer", vout, super.offset + LAYER_GAP);
@@ -134,69 +168,92 @@ class Convolution extends Layer
       z: super.volume.z,
     };
 
-    for(let channel=0; channel<input.volume.z; channel++)
+
+    //ASSUME channel = 1. DEAL WITH THIS LATER
+    for(let channel=0; channel<1/*input.volume.z*/; channel++)
     {
-        //Filter node at fj'th column, fi'th row
-        for(let fj=0; fj<this.size; fj++)
-        for(let fi=0; fi<this.size; fi++)
+      for(let k=0; k<vstride.z; k++)
+      {
+        //Organizing nodes per filter
+        let filter_nodes = super.nodes[k].flat();
+        //let a = [[[]]], b = [[[]]];
+        for(let j=0; j<vstride.y; j++)
+        for(let i=0; i<vstride.x; i++)
         {
-        //Dilation factor
-          for(let dj=0; dj<this.dilate; dj++)
-          for(let di=0; di<this.dilate; di++)
+          let aggregator = [];
+          //Organizing by each iteration of the gemm
+          //input nodes used in gemm instance
+          let a = [];
+          //Filter node at fj'th column, fi'th row
+          for(let fj=0; fj<this.size; fj++)
+          for(let fi=0; fi<this.size; fi++)
           {
-            let a = [], b =[];
+
+            //let dilate = [];
             let addedNode;
-            //input layer
-            v3loop(vstride, (i, j, k) =>
+            //Dilation factor  ASSUME DILATION = 1.  DEAL WITH THIS LATER
+            for(let dj=0; dj<1/*this.dilate*/; dj++)
+            for(let di=0; di<1/*this.dilate*/; di++)
             {
               //if the filter is recieving input data...
               if(inBounds( ( j*this.stride - this.padding + (fj+dj) ), 0, j )
               && inBounds( ( i*this.stride - this.padding + (fi+di) ), 0, i ) )
               {
-                a.push(input.nodes[channel][j*this.stride - this.padding + (fj+dj)][i*this.stride - this.padding + (fi+di)]);
-                b.push(super.nodes[k][fj][fi]);
+                addedNode = input.nodes[k][j*this.stride - this.padding + (fj+dj)][i*this.stride - this.padding + (fi+di)];
+                //dilate.push(addedNode);
               }
               //if the filter is recieving padding, push zeroed node to array a
               else
               {
-                addedNode = createNode();
+                addedNode = new Node();
                 addedNode.material.color = new THREE.Color(0, 0, 0);
-                a.push(addedNode);
-                b.push(super.nodes[k][fj][fi]);
+                //dilate.push(addedNode);
+
               }
-              //path(a.last().position, b.last().position);
-            });
+
+              aggregator.push(this.gemm(addedNode.obj.material.color, super.nodes[k][fj][fi].obj.material.color));
+
+              //store input nodes used in this instance of gemm
+              a.push(addedNode);
+            }
+            //for when we add dilation in
+            //nodesInGEMMinstance.push(dilate);
           }
-          //TODO: Need to incorporate the activation function (commonly reLU or leakyReLU) in this calculation if it is declared
-          a = a.map(x => x.material.color);
-          b = b.map(x => x.material.color);
-          let result = this.convolve(a, b);
-          //result is new color. When you add this node, make a path from the (fi, fj, k) node in the kernel to the (i,j,k) node in the feature map
-          outputLayer.addNode(result, i, j, k);
+          //create paths for gemm into  super.nodes[k][fj][fi]
+          super.nodes[k][fj][fi].addPaths(a.map( (x) => x.obj.position));
+          //Now every node.paths may uniformly iterate through each GEMM instance
+          //result is new color. When you add this node, make a path from the
+          //(fi, fj, k) node in the kernel to the (i,j,k) node in the feature map
+          let result = this.summate(aggregator);
+
+          //adds a node that has a path for each node in the k'th filter
+          outputLayer.addNode(result, i, j, k, filter_nodes);
         }
+        //TODO: Need to incorporate the activation function (commonly reLU or leakyReLU) in this calculation if it is declared
+      }
     }
-      //returns resulting layer so Network can use this as the input for the next hidden layer
-      return outputLayer;
+    //returns resulting layer so Network can use this as the input for the next hidden layer
+    return outputLayer;
   }
 
-  //This is in 3-channel to out 3-channel.
-  /*
-  What if I want to do 3-channel to out 2-channel?
-  Separate Illuminesce and Chromium (look this up lol)
-  */
-  //group element matrix multiplication
-  convolve(a, b)
+//a = input node ; b = filter node
+  gemm(a, b)
   {
-    let c = a.map( x =>
-    {
-      let y = b.shift();
-      return new THREE.Color(x.R * y.R, x.G * y.G, x.B * y.B); //got a bad feeling about this one, cap'n
-    });
-    let red   = c.reduce((sum, x) => {sum + x.R;});
-    let green = c.reduce((sum, x) => {sum + x.G;});
-    let blue  = c.reduce((sum, x) => {sum + x.B;});
+    return new THREE.Color(
+      a.R * b.R,
+      a.G * b.G,
+      a.B * b.B);
+  }
+
+
+  summate(a)
+  {
+    let red   = a.reduce((sum, x) => {sum + x.R;});
+    let green = a.reduce((sum, x) => {sum + x.G;});
+    let blue  = a.reduce((sum, x) => {sum + x.B;});
     return new THREE.Color(red, green, blue);
   }
+
 
   //returns a single node of the output volume
 }
@@ -225,9 +282,9 @@ class Pool extends Layer
     //Represent the volume as an object
     let vout =
     {
-      x: (input.volume.x − this.size) / this.size + 1,
-      y: (input.volume.y − this.size) / this.size + 1,
-      z: super.volume.z;
+      x: (input.volume.x - this.size) / this.size + 1,
+      y: (input.volume.y - this.size) / this.size + 1,
+      z: super.volume.z,
     };
     let outputLayer = new Layer("pooled layer", vout, super.offset + LAYER_GAP);
 

@@ -30,14 +30,4 @@ function v3loop(v, f)
 //Check if x is within [a,b]
 var inBounds = (x, a, b) => { return (x >= a && x <= b)};
 
-function createNode()
-{
-  let geometry = new THREE.BoxGeometry(1,1,1);
-  let material = new THREE.MeshBasicMaterial();
-  return new THREE.Mesh( geometry, material );
-}
 
-function createPath()
-{
-  
-}
