@@ -167,10 +167,9 @@ class Convolution extends Layer
       y: (input.volume.y - this.size) / this.size + 1,
       z: super.volume.z,
     };
-
-
     //ASSUME channel = 1. DEAL WITH THIS LATER
     for(let channel=0; channel<1/*input.volume.z*/; channel++)
+
     {
       for(let k=0; k<vstride.z; k++)
       {
