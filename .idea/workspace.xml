@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b3b481f5-18d2-4ef6-8380-8440e1caae9d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Layer.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/Layer.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Network.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/Network.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/visualai.html" beforeDir="false" afterPath="$PROJECT_DIR$/visualai.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/Layer.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/Layer.js" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -31,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/Layer.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="337">
-              <caret line="218" column="73" selection-start-line="218" selection-start-column="73" selection-end-line="218" selection-end-column="73" />
+            <state relative-caret-position="305">
+              <caret line="357" column="16" lean-forward="true" selection-start-line="357" selection-start-column="16" selection-end-line="357" selection-end-column="16" />
             </state>
           </provider>
         </entry>
@@ -146,12 +142,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1542687533397</updated>
-      <workItem from="1542687534837" duration="10529000" />
+      <workItem from="1542687534837" duration="11126000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10529000" />
+    <option name="totallyTimeSpent" value="11126000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
@@ -202,8 +198,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/Layer.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="337">
-          <caret line="218" column="73" selection-start-line="218" selection-start-column="73" selection-end-line="218" selection-end-column="73" />
+        <state relative-caret-position="305">
+          <caret line="357" column="16" lean-forward="true" selection-start-line="357" selection-start-column="16" selection-end-line="357" selection-end-column="16" />
         </state>
       </provider>
     </entry>
