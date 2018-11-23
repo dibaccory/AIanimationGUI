@@ -2,37 +2,50 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<style>
-			#grad1 {
-			    height: 200px;
-			    background-color: red; /* For browsers that do not support gradients */
-			    background-image: linear-gradient(red, yellow); /* Standard syntax (must be last) */
-			}
-		</style>
 		<meta charset=utf-8>
 		<title>Neural Network Builder</title>
 		<style>
-			body { margin: 0; }
 			canvas { width: 100%; height: 100% }
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				font-size: 18px;
+				position: absolute;
+				padding: 10px;
+				width: 100%;
+				text-align: center;
+			}
+			a {
+				text-decoration: underline;
+				cursor: pointer;
+			}
 		</style>
 	</head>
+	<body>
 	<script src="https://threejs.org/build/three.js"></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 	<script src="js/cameras/CinematicCamera.js"></script>
 	<script src="lib/main.js"></script>
 	<script src="lib/Layer.js"></script>
 	<script src="lib/Network.js"></script>
+	<!-- <link rel="stylesheet" type="text/css" href="index.css"> -->
 	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
 	<script>
 																							// Some global variables:
+		var container;
 		var camera, raycaster, renderer, scene;		// Three.js essentials
 		var mouse = new THREE.Vector2();					// Will be used to potential raycaster implementation
 		var radius = 100, theta = 0;							// Camera rotation and movement
 		var isPlaying = true;
 
-		function mainFunction() {
-			init();
-			animate();
+		window.onload = function() {
+  		init();
+  		animate();
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -248,12 +261,15 @@
 
 		function init() {
 
+			container = document.createElement( 'div' );
+			document.body.appendChild( container );
+
 			// Renderer stuff
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setClearColor ( 0x888888, 1 );
-			document.body.appendChild( renderer.domElement );
+			container.appendChild( renderer.domElement );
 
 			// Camera stuff
 			var aspect = window.innerWidth / window.innerHeight;
@@ -263,6 +279,7 @@
 			camera.position.y = 5;
 			camera.position.z = 50;
 
+			// Light stuff
 			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 1.0 );
 
 			scene = new THREE.Scene();
@@ -309,13 +326,14 @@
 			// Currently not implemented
 			raycaster = new THREE.Raycaster();
 
+			// Gives ability to rotate scene using mouse
 			var cameraControls = new THREE.OrbitControls( camera );
 			cameraControls.addEventListener( "change", animate );
 
+			// Makes the animation adapt to the size of the window
 			window.addEventListener( "resize", resize, false );
 		}
 
-		// Makes the animation adapt to the size of the window
 		function resize() {
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
@@ -364,11 +382,11 @@
 		}
 
 	</script>
-	<body onload = "mainFunction();">
-	<h1>
-		super cool awesome network animation </br>
-	</h1>
-	<button type="play" onclick = "play();">Play</button>
-	<button type="pause" onclick = "pause();">Pause</button>
+	<div id="info">
+		Super Awesome Convolutional Neural Network Visualizer<br/>
+		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy</br>
+		<button onclick="play();">Play</a>
+		<button onclick="pause();">Pause</a>
+	</div>
 	</body>
 </html>
