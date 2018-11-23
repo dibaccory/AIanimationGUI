@@ -2,6 +2,13 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<style>
+			#grad1 {
+			    height: 200px;
+			    background-color: red; /* For browsers that do not support gradients */
+			    background-image: linear-gradient(red, yellow); /* Standard syntax (must be last) */
+			}
+		</style>
 		<meta charset=utf-8>
 		<title>Neural Network Builder</title>
 		<style>
@@ -17,15 +24,18 @@
 	<script src="lib/Network.js"></script>
 	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
 	<script>
+																							// Some global variables:
+		var camera, raycaster, renderer, scene;		// Three.js essentials
+		var mouse = new THREE.Vector2();					// Will be used to potential raycaster implementation
+		var radius = 100, theta = 0;							// Camera rotation and movement
+		var isPlaying = true;
 
+		function mainFunction() {
+			init();
+			animate();
+		}
 
-
-
-		// Some global variables
-		var camera, racaster, renderer, scene;
-		var mouse = new THREE.Vector2();
-		var radius = 100, theta = 0;
-
+		// Draws a line that connects the point p1 to point p2
 		function draw(p1, p2)
 		{
 			var mat = new THREE.LineBasicMaterial({color:0x888888})
@@ -88,11 +98,6 @@
 				this.datasetImages = new Float32Array(datasetBytesBuffer);
 				const img1 = this.datasetImages.slice(IMAGE_SIZE * 1, IMAGE_SIZE * 2);
 
-				var scene = new THREE.Scene();
-				var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
-				var renderer = new THREE.WebGLRenderer();
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				document.body.appendChild( renderer.domElement );
 				var geometry = new THREE.BoxGeometry( 1, 1, 1 );
 				var c, k=0;
 				var R = 0;
@@ -127,99 +132,99 @@
 					}
 				}
 
-				for(let t=0; t<4; t++)
-				{
-					for(let i=-14; i < 14; i++)
-					{
-						for(let j=-14; j < 14; j++)
-						{
-							c = Math.random()
-							if(c <= .5)
-							{
-								R = 0;
-								B = 1 - 2*c;
-								G = 2*c;
-							}
-							else
-							{
-								B = 0;
-								R = 2*c - 1;
-								G = 2 - 2*c;
-							}
+				// for(let t=0; t<4; t++)
+				// {
+				// 	for(let i=-14; i < 14; i++)
+				// 	{
+				// 		for(let j=-14; j < 14; j++)
+				// 		{
+				// 			c = Math.random()
+				// 			if(c <= .5)
+				// 			{
+				// 				R = 0;
+				// 				B = 1 - 2*c;
+				// 				G = 2*c;
+				// 			}
+				// 			else
+				// 			{
+				// 				B = 0;
+				// 				R = 2*c - 1;
+				// 				G = 2 - 2*c;
+				// 			}
 
-							var colors = new THREE.Color( R, G, B );
-							var material = new THREE.MeshBasicMaterial( { color: colors } );
-							var cube = new THREE.Mesh( geometry, material );
+				// 			var colors = new THREE.Color( R, G, B );
+				// 			var material = new THREE.MeshBasicMaterial( { color: colors } );
+				// 			var cube = new THREE.Mesh( geometry, material );
 
-							cube.position.x += 1.2*i;
-							cube.position.y += 1.2*j;
-							cube.position.z += -12 + t*-2;
-							scene.add( cube );
-						}
-					}
-				}
+				// 			cube.position.x += 1.2*i;
+				// 			cube.position.y += 1.2*j;
+				// 			cube.position.z += -12 + t*-2;
+				// 			scene.add( cube );
+				// 		}
+				// 	}
+				// }
 
-				for(var t=0; t<4; t++)
-				{
-					for(var i=-7; i < 7; i++)
-					{
-						for(var j=-7; j < 7; j++)
-						{
-							c = Math.random()
-							if(c <= .5)
-							{
-								R = 0;
-								B = 1 - 2*c;
-								G = 2*c;
-							}
-							else
-							{
-								B = 0;
-								R = 2*c - 1;
-								G = 2 - 2*c;
-							}
+				// for(var t=0; t<4; t++)
+				// {
+				// 	for(var i=-7; i < 7; i++)
+				// 	{
+				// 		for(var j=-7; j < 7; j++)
+				// 		{
+				// 			c = Math.random()
+				// 			if(c <= .5)
+				// 			{
+				// 				R = 0;
+				// 				B = 1 - 2*c;
+				// 				G = 2*c;
+				// 			}
+				// 			else
+				// 			{
+				// 				B = 0;
+				// 				R = 2*c - 1;
+				// 				G = 2 - 2*c;
+				// 			}
 
-							var colors = new THREE.Color( R, G, B );
-							var material = new THREE.MeshBasicMaterial( { color: colors } );
-							var cube = new THREE.Mesh( geometry, material );
+				// 			var colors = new THREE.Color( R, G, B );
+				// 			var material = new THREE.MeshBasicMaterial( { color: colors } );
+				// 			var cube = new THREE.Mesh( geometry, material );
 
-							cube.position.x += 1.2*i;
-							cube.position.y += 1.2*j;
-							cube.position.z += -24 + t*-2;
+				// 			cube.position.x += 1.2*i;
+				// 			cube.position.y += 1.2*j;
+				// 			cube.position.z += -24 + t*-2;
 
-							scene.add( cube );
-						}
-					}
-				}
+				// 			scene.add( cube );
+				// 		}
+				// 	}
+				// }
 
-				for(var j=-5; j < 5; j++)
-				{
-					c = Math.random()
-					if(c <= .5)
-					if(c <= .5)
-					{
-						R = 0;
-						B = 1 - 2*c;
-						G = 2*c;
-					}
-					else
-					{
-						B = 0;
-						R = 2*c - 1;
-						G = 2 - 2*c;
-					}
+				// for(var j=-5; j < 5; j++)
+				// {
+				// 	c = Math.random()
+				// 	if(c <= .5)
+				// 	if(c <= .5)
+				// 	{
+				// 		R = 0;
+				// 		B = 1 - 2*c;
+				// 		G = 2*c;
+				// 	}
+				// 	else
+				// 	{
+				// 		B = 0;
+				// 		R = 2*c - 1;
+				// 		G = 2 - 2*c;
+				// 	}
 
 
-					var colors = new THREE.Color( R, G, B );
-					var material = new THREE.MeshBasicMaterial( { color: colors } );
-					var cube = new THREE.Mesh( geometry, material );
+				// 	var colors = new THREE.Color( R, G, B );
+				// 	var material = new THREE.MeshBasicMaterial( { color: colors } );
+				// 	var cube = new THREE.Mesh( geometry, material );
 
-					cube.position.x += 1.2*j;
-					// cube.position.y += 1.2*j
-					cube.position.z += -36;
+				// 	cube.position.x += 1.2*j;
+				// 	// cube.position.y += 1.2*j
+				// 	cube.position.z += -36;
 
-					scene.add( cube );
-				}
+				// 	scene.add( cube );
+				// }
 
 				camera.position.x = 40;
 
@@ -241,7 +246,7 @@
 				// console.log(img1);
 		});
 
-		function mainFunction() {
+		function init() {
 
 			// Renderer stuff
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -266,6 +271,7 @@
 			scene.add( ambientLight );
 			scene.add( camera );
 
+			// Add the layers to the scene
 			var geometry = new THREE.BoxGeometry( 1, 1, 1);
 			for(let t=0; t<4; t++)
 			{
@@ -303,46 +309,58 @@
 			// Currently not implemented
 			raycaster = new THREE.Raycaster();
 
-			function animate() {
-
-				requestAnimationFrame( animate );
-				
-				render();
-			}
-
-			function render() {
-
-				// First if condition is to have it zoom in and then rotate.
-				// The else condition to have it pan sideways
-				if (theta < 90)
-				{
-					theta += 0.5;
-					// camera.position.x = radius * Math.sin( THREE.Math.degToRad( theta ) );
-					// camera.position.y = radius * Math.sin( THREE.Math.degToRad( theta ) );
-					camera.position.z = radius * Math.cos( THREE.Math.degToRad( theta ) );
-					camera.lookAt( scene.position );
-				}
-				else
-				{
-					camera.position.z -= 0.5;
-				}
-
-				renderer.render( scene, camera );
-			}
-
 			var cameraControls = new THREE.OrbitControls( camera );
 			cameraControls.addEventListener( "change", animate );
 
-			animate();
-
-			var resize = function () {
-				renderer.setSize(window.innerWidth, window.innerHeight);
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-				animate();
-			};
-
 			window.addEventListener( "resize", resize, false );
+		}
+
+		// Makes the animation adapt to the size of the window
+		function resize() {
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			animate();
+		};
+
+		function animate() {
+
+			if ( !isPlaying ) return;
+
+			requestAnimationFrame( animate );
+			
+			render();
+		}
+
+		function render() {
+
+			// First if condition is to have it zoom in and then rotate.
+			// The else condition to have it pan sideways
+			if (theta < 90)
+			{
+				theta += 0.5;
+				// camera.position.x = radius * Math.sin( THREE.Math.degToRad( theta ) );
+				// camera.position.y = radius * Math.sin( THREE.Math.degToRad( theta ) );
+				camera.position.z = radius * Math.cos( THREE.Math.degToRad( theta ) );
+				camera.lookAt( scene.position );
+			}
+			else
+			{
+				camera.position.z -= 0.5;
+			}
+
+			renderer.render( scene, camera );
+		}
+
+		function play() {
+			isPlaying = true;
+			animate();
+		}
+
+		function pause() {
+			isPlaying = false;
 		}
 
 	</script>
@@ -350,5 +368,7 @@
 	<h1>
 		super cool awesome network animation </br>
 	</h1>
+	<button type="play" onclick = "play();">Play</button>
+	<button type="pause" onclick = "pause();">Pause</button>
 	</body>
 </html>
