@@ -8,10 +8,10 @@
 			canvas { width: 100%; height: 100% }
 			body {
 				font-family: Monospace;
-				background-color: #000;
-				color: #000;
+				background-color: #1A8FCF;
 				margin: 0px;
 				overflow: hidden;
+				background-image: linear-gradient(#1A8FCF,#D1236A);
 			}
 			#info {
 				font-size: 18px;
@@ -271,10 +271,10 @@
 			document.body.appendChild( container );
 
 			// Renderer stuff
-			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setClearColor ( 0x888888, 1 );
+			// renderer.setClearColor ( 0x888888, 1 );
 			container.appendChild( renderer.domElement );
 
 			// Camera stuff
