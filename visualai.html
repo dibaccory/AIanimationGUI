@@ -41,6 +41,7 @@
 		var isPlaying = true;                     // For the play/pause button
 		var mouse = new THREE.Vector3();          // For the raycaster
 		var selectedObject = null, group;         // For the raycaster
+		var panDistance = 200;										// Determines how face the camera pans
 
 		// CONSTANTS
 		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
@@ -411,11 +412,10 @@
 		}
 
 		function animate() {
+
 			requestAnimationFrame( animate );
-
-			// controls.update();
-
 			render();
+
 		}
 
 		function render() {
@@ -430,12 +430,13 @@
 					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
 					camera.lookAt( scene.position );
 
-				} else {
+				} else if ( scene.position.z < panDistance ) {
 					camera.position.z -= 1;
 					scene.position.z  += 1;
 				}
 			}
 
+			controls.update();
 			renderer.render( scene, camera );
 		}
 
