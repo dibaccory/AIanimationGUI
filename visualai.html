@@ -15,16 +15,17 @@
 	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
 	<script>
 		// GLOBAL VARIABLES
-		var container;                            // Will be used to add the .js script to the browser
-		var camera, raycaster, renderer, scene;   // Three.js essentials
-		var controls;                             // For orbital controls
-		var isPlaying = true;                     // For the play/pause button
-		var mouse = new THREE.Vector3();          // For the raycaster
-		var selectedObject = null, group;         // For the raycaster
-		var panDistance = 200;										// Determines how face the camera pans
+		var container;                                      // Will be used to add the .js script to the browser
+		var camera, raycaster, renderer, scene;             // Three.js essentials
+		var controls;                                       // For orbital controls
+		var isPlaying = false;                              // For the play/pause button
+		var mouse = new THREE.Vector3();                    // For the raycaster
+		var selectedObject = null, group;                   // For the raycaster
+		var panDistance = 200;										          // Determines how face the camera pans
 
 		// CONSTANTS
 		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
+		var PANSPEED = 1, ROTATIONSPEED = 1;								// Camera movement speed
 		var HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
 
 		// The first function that loads
@@ -258,14 +259,20 @@
 			renderer.setPixelRatio( window.devicePixelRatio );
 			container.appendChild( renderer.domElement );
 
+			// Setting the scene
+			scene = new THREE.Scene();
+
 			// Camera stuff
 			var aspect = window.innerWidth / window.innerHeight;
 			camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 1000 );
-			camera.setLens( 5 );
-			camera.position.set( 250, 100, 500 );
+			camera.position.set( 0, 0, RADIUS );
+			camera.lookAt( scene.position );
+			scene.add( camera );
 
 			// Light stuff
 			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 1.0 );
+			scene.add( ambientLight );
+
 			// var spotLight    = new THREE.SpotLight ( 0xffffff, 1, 0, Math.PI / 2 )
 			// spotLight.position.set( 0, 300, 500 );
 			// spotLight.target.position.set( 0, 0, 0 );
@@ -283,10 +290,7 @@
 			// ground.material.side = THREE.DoubleSide;
 
 			// Create and add objects to the scene
-			scene = new THREE.Scene();
-			scene.add( ambientLight );
 			// scene.add( spotLight );
-			scene.add( camera );
 			// scene.add( ground );
 
 			// A Raycaster can tell what object is the mouse hovering over
@@ -324,6 +328,7 @@
 							cube.position.y += 12*j;
 							cube.position.z += t*-50;
 							cube.original = colors;
+
 							scene.add( cube );
 							group.add( cube );
 					}
@@ -403,14 +408,14 @@
 			if ( isPlaying ) {
 				if ( THETA < 90 ) {
 
-					THETA += 1;
 					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( THETA ) );
 					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
 					camera.lookAt( scene.position );
+					THETA += ROTATIONSPEED;
 
 				} else if ( scene.position.z < panDistance ) {
-					camera.position.z -= 1;
-					scene.position.z  += 1;
+					camera.position.z -= PANSPEED;
+					scene.position.z  += PANSPEED;
 				}
 			}
 
@@ -426,12 +431,22 @@
 			isPlaying = false;
 		}
 
+		function restart() {
+			isPlaying = false;
+			THETA = 0;
+			scene.position.set( 0, 0, 0 );
+			camera.position.set( 0, 0, RADIUS );
+			camera.lookAt( scene.position );
+		}
+
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
 		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy</br>
 		<button onclick="play();">Play</a>
 		<button onclick="pause();">Pause</a>
+		<button onclick="restart();">Restart</a>
+
 	</div>
 	</body>
 </html>
