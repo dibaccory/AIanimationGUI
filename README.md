@@ -11,9 +11,3 @@ TODO:
 	4) Check that the user isn't making invalid moves. (ie: adding 2 input layers, etc)
 	5) Add a "play" button?
 	6) Add a URL field? (dream feature)
-
-Design style:
-	+-----+          +-----+
-	| in  |  ......  | out |
-	+-----+          +-----+
-	            ^ x number of layers
