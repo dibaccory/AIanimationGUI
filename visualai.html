@@ -324,6 +324,7 @@
 							cube.position.y += 12*j;
 							cube.position.z += t*-50;
 							cube.original = colors;
+
 							scene.add( cube );
 							group.add( cube );
 					}
@@ -426,12 +427,22 @@
 			isPlaying = false;
 		}
 
+		function restart() {
+			isPlaying = false;
+			THETA = 0;
+			scene.position.set( 0, 0, 0 );
+			camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( THETA ) );
+			camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
+			camera.lookAt( scene.position );		}
+
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
 		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy</br>
 		<button onclick="play();">Play</a>
 		<button onclick="pause();">Pause</a>
+		<button onclick="restart();">Restart</a>
+
 	</div>
 	</body>
 </html>
