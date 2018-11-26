@@ -9,7 +9,9 @@
 	<body>
 	<script src="https://threejs.org/build/three.js"></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.3/dist/tf.min.js"></script>
 	<script src="lib/main.js"></script>
+	<script type= "module" src="lib/model.js"></script>
 	<script src="lib/Layer.js"></script>
 	<script src="lib/Network.js"></script>
 	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
@@ -37,29 +39,13 @@
 		// Draws a line that connects the point p1 to point p2
 		function draw(p1, p2)
 		{
-			var mat = new THREE.LineBasicMaterial({color:0x888888})
-			var geo = new THREE.Geometry()
-			geo.vertices.push( new THREE.Vertex(p1) )
-			geo.vertices.push( new THREE.Vertex(p2) )
-			var line = new THREE.Line(geo)
-			scene.add(line)
+			var mat = new THREE.LineBasicMaterial({color:0x888888});
+			var geo = new THREE.Geometry();
+			geo.vertices.push( new THREE.Vertex(p1) );
+			geo.vertices.push( new THREE.Vertex(p2) );
+			var line = new THREE.Line(geo);
+			scene.add(line);
 			return line
-		}
-
-		function build(architecture)
-		{
-			switch (architecture)
-			{
-				case "ANN":
-					ANN();
-					break;
-				case "CNN":
-					CNN();
-					break;
-				case "RNN":
-					RNN();
-					break;
-			}
 		}
 
 		function createLayer( mnistNetwork )
@@ -344,9 +330,9 @@
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
 		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy</br>
-		<button onclick="play();">Play</a>
-		<button onclick="pause();">Pause</a>
-		<button onclick="restart();">Restart</a>
+		<button onclick="play();">Play</button>
+		<button onclick="pause();">Pause</button>
+		<button onclick="restart();">Restart</button>
 
 	</div>
 	</body>
