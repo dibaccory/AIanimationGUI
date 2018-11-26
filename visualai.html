@@ -17,10 +17,10 @@
 	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
 	<script>
 		// GLOBAL VARIABLES
-		var container;                                      // Will be used to add the .js script to the browser
+		var container; 		                                  // Will be used to add the .js script to the browser
 		var camera, raycaster, renderer, scene;             // Three.js essentials
 		var controls;                                       // For orbital controls
-		var isPlaying = false;                              // For the play/pause button
+		var isPlaying = false, isDrawing = false;           // For the play/pause button
 		var mouse = new THREE.Vector3();                    // For the raycaster
 		var selectedObject = null, group;                   // For the raycaster
 		var panDistance = 200;										          // Determines how face the camera pans
@@ -28,7 +28,7 @@
 		// CONSTANTS
 		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
 		var HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
-		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1;
+		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1, LAYER_DELAY;
 
 		// The first function that loads
 		window.onload = function() {
@@ -37,8 +37,7 @@
 		}
 
 		// Draws a line that connects the point p1 to point p2
-		function draw(p1, p2)
-		{
+		function draw(p1, p2) {
 			var mat = new THREE.LineBasicMaterial({color:0x888888});
 			var geo = new THREE.Geometry();
 			geo.vertices.push( new THREE.Vertex(p1) );
@@ -48,20 +47,11 @@
 			return line
 		}
 
-		function createLayer( mnistNetwork )
-		{
-			for (var layer; layer < mnistNetwork.length; layer++ )		
-			{	
-				for (var i = 0; i < mnistNetwork.nodes.length; i++ )
-				{
-					for (var j = 0; j < mnistNetwork[i].length; j++ )
-					{
-						for (var k = 0; k < mnistNetwork[i][j].length; k++ )
-						{
-							scene.add(mnistNetwork)
-						}
-					}
-				}
+		function createLayer( mnistNetwork ) {
+			for (var layer; layer < mnistNetwork.length; layer++ ) {	
+				v3loop( mnistNetwork[layer].volume, ( i, j, k ) => {
+					scene.add( mnistNetwork[layer].nodes[k][j][i] );
+				});
 			}
 		}
 
@@ -96,10 +86,7 @@
 				const img1 = this.datasetImages.slice(IMAGE_SIZE * 1, IMAGE_SIZE * 2);
 
 				var geometry = new THREE.BoxGeometry( 10, 10, 10 );
-				var c, k=0;
-				var R = 0;
-				var G = 0;
-				var B = 0;
+				var c, k=0, R = 0, G = 0, B = 0;
 				console.log(img1);
 				for(let i= -14; i < 14; i++)
 				{
@@ -159,26 +146,6 @@
 			// Light stuff
 			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 1.0 );
 			scene.add( ambientLight );
-
-			// var spotLight    = new THREE.SpotLight ( 0xffffff, 1, 0, Math.PI / 2 )
-			// spotLight.position.set( 0, 300, 500 );
-			// spotLight.target.position.set( 0, 0, 0 );
-			// spotLight.castShadow = true;
-
-			// ~~ GROUND: I'll try to add shadows to make it look super legit. This is on pause for now ~~
-			// var geometry = new THREE.PlaneBufferGeometry( 100, 100 );
-			// var planeMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
-			// var ground = new THREE.Mesh( geometry, planeMaterial );
-			// ground.position.set( 0, -150, 0 );
-			// ground.scale.set( 100, 100, 100 );
-			// ground.rotation.x = - Math.PI / 2;
-			// ground.castShadow = false;
-			// ground.receiveShadow = true;
-			// ground.material.side = THREE.DoubleSide;
-
-			// Create and add objects to the scene
-			// scene.add( spotLight );
-			// scene.add( ground );
 
 			// A Raycaster can tell what object is the mouse hovering over
 			raycaster = new THREE.Raycaster();
@@ -455,3 +422,25 @@ Not my code but it was getting in the way so I moved it down here. - Soliman
  <!-- 
 												// var colors = new THREE.Color( 1*img1[k], 1*img1[k], 1*img1[k] );
 						// draw(new THREE.Vector3(cube.position.x,cube.position.y,cube.position.z),new THREE.Vector3(cube.position.x,cube.position.y,(cube.position.z-12)); -->
+
+<!-- 						
+			// var spotLight    = new THREE.SpotLight ( 0xffffff, 1, 0, Math.PI / 2 )
+			// spotLight.position.set( 0, 300, 500 );
+			// spotLight.target.position.set( 0, 0, 0 );
+			// spotLight.castShadow = true;
+
+			// ~~ GROUND: I'll try to add shadows to make it look super legit. This is on pause for now ~~
+			// var geometry = new THREE.PlaneBufferGeometry( 100, 100 );
+			// var planeMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+			// var ground = new THREE.Mesh( geometry, planeMaterial );
+			// ground.position.set( 0, -150, 0 );
+			// ground.scale.set( 100, 100, 100 );
+			// ground.rotation.x = - Math.PI / 2;
+			// ground.castShadow = false;
+			// ground.receiveShadow = true;
+			// ground.material.side = THREE.DoubleSide;
+
+			// Create and add objects to the scene
+			// scene.add( spotLight );
+			// scene.add( ground );
+ -->
