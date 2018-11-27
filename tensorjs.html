@@ -65,10 +65,44 @@
 					// grabs output 1 layer at a time
 					const input = tf.ones([1, 28, 28, 1]);
 					const output = model.getLayer('', 0).apply(input);
+
 					// .dataSync() pull from gpu and give 1D js array
+					// Converts back to original shape
 					console.log(output.dataSync());
-					const output2 = model.getLayer('', 1).apply(output);
-					console.log(output2.dataSync());
+					var k = output.shape[0];
+					var l = output.shape[1];
+					var m = output.shape[2];
+					var n = output.shape[3];
+
+					var arr =  Array.prototype.slice.call(output.dataSync());
+					var newArr = [];
+					var newArr2 = [];
+					var newArr3 = [];
+					var newArr4 = [];
+
+					while(arr.length) 
+					{
+						newArr.push(arr.splice(0,n));
+					}
+					while(newArr.length) 
+					{
+						newArr2.push(newArr.splice(0,m));
+					}
+
+					while(newArr2.length) 
+					{
+						newArr3.push(newArr2.splice(0,l));
+					}
+
+					while(newArr3.length) 
+					{
+						newArr4.push(newArr3.splice(0,k));
+					}
+					console.log(newArr4);
+
+
+					// const output2 = model.getLayer('', 1).apply(output);
+					// console.log(output2.dataSync());
 				// }
 			}
 		</script>
