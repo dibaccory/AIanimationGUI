@@ -69,7 +69,6 @@
 					// .dataSync() pull from gpu and give 1D js array
 					// Converts back to original shape
 					console.log(output.dataSync());
-					var k = output.shape[0];
 					var l = output.shape[1];
 					var m = output.shape[2];
 					var n = output.shape[3];
@@ -78,7 +77,6 @@
 					var newArr = [];
 					var newArr2 = [];
 					var newArr3 = [];
-					var newArr4 = [];
 
 					while(arr.length) 
 					{
@@ -93,12 +91,7 @@
 					{
 						newArr3.push(newArr2.splice(0,l));
 					}
-
-					while(newArr3.length) 
-					{
-						newArr4.push(newArr3.splice(0,k));
-					}
-					console.log(newArr4);
+					console.log(newArr3);
 
 
 					// const output2 = model.getLayer('', 1).apply(output);
