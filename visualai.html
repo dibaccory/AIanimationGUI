@@ -60,6 +60,7 @@
 		}
 
 		// 1D array, channels, width, height
+		// outputs js array in original shape
 		function oneDToMany(layer, n, m , l)
 		{
 			var arr =  Array.prototype.slice.call(layer);
@@ -82,21 +83,19 @@
 			return finalarr;
 		}
 
-		var ilayer = 1;
 		// layer rendering abstraction
+		var ilayer = 1;
 		function imgVis(layer, scene, group, num)
 		{
 			var R, B, G;
-			// Add the layers to the scene
 			var geometry = new THREE.BoxGeometry( 10, 10, 10);
-			for(let t=0; t < layer[0][0][0].length; t++)
+
+			for(let t = 0; t < layer[0][0][0].length; t++)
 			{
-				var k = 0;
-				for(let i=-layer[0][0].length/2; i < layer[0][0].length/2; i++)
+				for(let i = -layer[0][0].length/2; i < layer[0][0].length/2; i++)
 				{
-					for(let j=-layer[0].length/2; j < layer[0].length/2; j++)
+					for(let j = -layer[0].length/2; j < layer[0].length/2; j++)
 					{
-							// var c = Math.random()
 							if(ilayer == 1)
 							{
 								R = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
@@ -148,7 +147,7 @@
 			var R, B, G;
 			var geometry = new THREE.BoxGeometry( 10, 10, 10);
 
-			for(let j=-layer.length/2; j < layer.length/2; j++)
+			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
 				if(layer[j+layer.length/2] <= .5)
 				{
@@ -169,11 +168,11 @@
 				cube.position.x += 12*j;
 				if(dense1 == 1)
 				{
-					cube.position.z += (-200*num) - 100;
+					cube.position.z += (-200*num) - 50;
 				}
 				else
 				{
-					cube.position.z += (-200*(num-1)) - 200;
+					cube.position.z += (-200*(num-1)) - 150;
 				}
 				cube.original = colors;
 				scene.add( cube );
@@ -215,6 +214,7 @@
 			scene.add( group );
 			
 			// Layer visualizations
+			// input layer
 			var input = data.datasetImages.slice(784, 1568);
 			var img = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(img, scene, group, 0);
@@ -222,13 +222,9 @@
 			group = stuffz.group;
 			ilayer = 0;
 
-			var output = model.getLayer('', 0).apply(tf.tensor4d(img));
-			var fmap = oneDToMany(output.dataSync(), output.shape[3], output.shape[2], output.shape[1]);
-			var stuffz = imgVis(fmap, scene, group, 1);
-			scene = stuffz.scene;
-			group = stuffz.group;
-
-			for(let i = 1; i < 4; i++)
+			// loop through conv and pool layers
+			var output = tf.tensor4d(img);
+			for(let i = 0; i < 4; i++)
 			{
 				var output = model.getLayer('', i).apply(output);
 				var fmap = oneDToMany(output.dataSync(), output.shape[3], output.shape[2], output.shape[1]);
@@ -238,17 +234,18 @@
 				console.log(fmap);
 			}
 
+			// flatten layer
 			var output = model.getLayer('', 4).apply(output);
+			// 1st dense layer
 			var output = model.getLayer('', 5).apply(output);
-			// var dense = oneDToMany(output.dataSync(), output.shape[3], output.shape[2], output.shape[1]);
 			var stuffz = denseVis(output.dataSync(), scene, group, 5);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			dense1 = 0;
 			console.log(output.dataSync());
 
+			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
-			// var fmap = oneDToMany(output.dataSync(), output.shape[3], output.shape[2], output.shape[1]);
 			var stuffz = denseVis(output.dataSync(), scene, group, 6);
 			scene = stuffz.scene;
 			group = stuffz.group;
