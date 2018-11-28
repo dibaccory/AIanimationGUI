@@ -14,33 +14,34 @@
 	<script type= "module" src="lib/model.js"></script>
 	<script src="lib/Layer.js"></script>
 	<script src="lib/Network.js"></script>
-	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
 	<script type= "module">
 		// GLOBAL VARIABLES
-		var container; 		                                  // Will be used to add the .js script to the browser
+		var container; 		                                // Will be used to add the .js script to the browser
 		var camera, raycaster, renderer, scene;             // Three.js essentials
 		var controls;                                       // For orbital controls
 		var isPlaying = false, isDrawing = false;           // For the play/pause button
 		var mouse = new THREE.Vector3();                    // For the raycaster
 		var selectedObject = null, group;                   // For the raycaster
-		var panDistance = 200;										          // Determines how face the camera pans
+		var panDistance = 200;								// Determines how face the camera pans
 
 		// CONSTANTS
 		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
 		var HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
 		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1, LAYER_DELAY;
+		var IMAGE_SIZE = 784;
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
 
 		// The first function that loads
 		window.onload = function() {
+			// wait for training to finish
 			setTimeout(function()
 			{
 				init();
 				animate();
 				// console.log(model);
-			}, 15000);
+			}, 17000);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -91,7 +92,7 @@
 		function imgVis(layer, scene, group, num)
 		{
 			var R, B, G;
-			var geometry = new THREE.BoxGeometry( 10, 10, 10);
+			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let t = 0; t < layer[0][0][0].length; t++)
 			{
@@ -125,7 +126,7 @@
 							var material = new THREE.MeshBasicMaterial( { color: colors } );
 							var cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
-							cube.position.y += 12*j;
+							cube.position.y += 12*(-j);
 							if(ilayer == 1)
 							{
 								cube.position.z += t*-25 + (-100*num);
@@ -148,7 +149,7 @@
 		function denseVis(layer, scene, group, num)
 		{
 			var R, B, G;
-			var geometry = new THREE.BoxGeometry( 10, 10, 10);
+			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
@@ -215,14 +216,10 @@
 			raycaster = new THREE.Raycaster();
 			group = new THREE.Group();
 			scene.add( group );
-			
-			// setTimeout(function()
-			// {
-			    //do what you need here
 
 			// Layer visualizations
 			// input layer
-			var input = data.datasetImages.slice(784, 1568);
+			var input = data.datasetImages.slice(IMAGE_SIZE*2, IMAGE_SIZE*3);
 			var img = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(img, scene, group, 0);
 			scene = stuffz.scene;
@@ -238,7 +235,7 @@
 				var stuffz = imgVis(fmap, scene, group, i+1);
 				scene = stuffz.scene;
 				group = stuffz.group;
-				console.log(fmap);
+				// console.log(fmap);
 			}
 
 			// flatten layer
@@ -249,14 +246,17 @@
 			scene = stuffz.scene;
 			group = stuffz.group;
 			dense1 = 0;
-			console.log(output.dataSync());
+			// console.log(output.dataSync());
 
 			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
 			var stuffz = denseVis(output.dataSync(), scene, group, 6);
 			scene = stuffz.scene;
 			group = stuffz.group;
-			console.log(output.dataSync());
+			// console.log(output.dataSync());
+
+			// group.children[27].material.color = new THREE.Color ( 0x00FF00 );
+			// group.children[28].material.color = new THREE.Color ( 0x00FF00 );
 		
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
@@ -269,8 +269,6 @@
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
-
-			// }, 6000);
 		}
 		
 		// The program adapts to the size of the browser window
