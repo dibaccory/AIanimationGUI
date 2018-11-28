@@ -31,13 +31,13 @@
 		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1, LAYER_DELAY;
 
 		// Grabs model data from other js module
-		import {model} from './lib/model.js';
+		import {data, model} from './lib/model.js';
 
 		// The first function that loads
 		window.onload = function() {
 			init();
 			animate();
-			console.log(model);
+			// console.log(model);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -57,6 +57,70 @@
 					scene.add( mnistNetwork[layer].nodes[k][j][i] );
 				});
 			}
+		}
+
+		function oneDToMany(layer, n, m , l)
+		{
+			var arr =  Array.prototype.slice.call(layer);
+			var newArr = [];
+			var newArr2 = [];
+			var finalarr = [];
+			while(arr.length) 
+			{
+				newArr.push(arr.splice(0,n));
+			}
+			while(newArr.length) 
+			{
+				newArr2.push(newArr.splice(0,m));
+			}
+			while(newArr2.length) 
+			{
+				finalarr.push(newArr2.splice(0,l));
+			}
+
+			return finalarr;
+		}
+
+		function layerVis(layer, scene, group)
+		{
+			var B, R, G;
+			// Add the layers to the scene
+			var geometry = new THREE.BoxGeometry( 10, 10, 10);
+			for(let t=0; t < layer[0][0][0].length; t++)
+			{
+				var k = 0;
+				for(let i=-layer[0][0].length/2; i < layer[0][0].length/2; i++)
+				{
+					for(let j=-layer[0].length/2; j < layer[0].length/2; j++)
+					{
+							// var c = Math.random()
+							if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
+							{
+								R = 0;
+								B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+							}
+							else
+							{
+								B = 0;
+								R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
+								G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+							}
+							var colors = new THREE.Color( R, G, B );
+							var material = new THREE.MeshBasicMaterial( { color: colors } );
+							var cube = new THREE.Mesh( geometry, material );
+							cube.position.x += 12*i;
+							cube.position.y += 12*j;
+							cube.position.z += t*-50;
+							cube.original = colors;
+							scene.add( cube );
+							group.add( cube );
+							k += 1;
+					}
+				}
+			}
+
+			return {scene: scene, group: group};
 		}
 		
 		// Initializes all the necessary variables for a basic THREE.js application
@@ -90,40 +154,12 @@
 			group = new THREE.Group();
 			scene.add( group );
 			
-			var B, R, G;
-			// Add the layers to the scene
-			var geometry = new THREE.BoxGeometry( 10, 10, 10);
-			for(let t=0; t<4; t++)
-			{
-				for(let i=-4; i < 4; i++)
-				{
-					for(let j=-4; j < 4; j++)
-					{
-							var c = Math.random()
-							if(c <= .5)
-							{
-								R = 0;
-								B = 1 - 2*c;
-								G = 2*c;
-							}
-							else
-							{
-								B = 0;
-								R = 2*c - 1;
-								G = 2 - 2*c;
-							}
-							var colors = new THREE.Color( R, G, B );
-							var material = new THREE.MeshBasicMaterial( { color: colors } );
-							var cube = new THREE.Mesh( geometry, material );
-							cube.position.x += 12*i;
-							cube.position.y += 12*j;
-							cube.position.z += t*-50;
-							cube.original = colors;
-							scene.add( cube );
-							group.add( cube );
-					}
-				}
-			}
+			// Layer vis
+			var input = data.datasetImages.slice(784, 1568);
+			var img = oneDToMany(input, 1, 28, 28);;
+			var stuffz = layerVis(img, scene, group);
+			scene = stuffz.scene;
+			group = stuffz.group;
 		
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
