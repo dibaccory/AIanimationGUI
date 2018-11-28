@@ -224,7 +224,7 @@
 
 			// Layer visualizations
 			// input layer, select based off img size
-			var input = data.datasetImages.slice(IMAGE_SIZE*4, IMAGE_SIZE*5);
+			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
 			var img = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(img, scene, group, 0);
 			scene = stuffz.scene;
@@ -260,11 +260,33 @@
 			group = stuffz.group;
 			// console.log(output.dataSync());
 
-			// group.children[0].material.color = new THREE.Color ( 1, 0, 0 );
-			// group.children[27].material.color = new THREE.Color ( 0x00FF00 );
-			// group.children[28].material.color = new THREE.Color ( 0x00FF00 );
-			// group.children[29].material.color = new THREE.Color ( 0x00FF00 );
-			// group.children[56].material.color = new THREE.Color ( 0x00FF00 );
+			var m = 0;
+			// Kernel animation
+			setTimeout(function()
+			{
+				for(let q = 0; q < IMAGE_SIZE; q++)
+				{
+					setTimeout(function()
+					{
+						// range of z changing when it shouldn't?
+						for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
+						{
+							for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
+							{	
+								if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+									group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
+							}
+						}
+						if(q % 28 == 0)
+							m += 1;
+					}, q*200);
+				}
+			}, 1000);
+			// group.children[0].material.color = new THREE.Color ( 0, 0, 1 );
+			// group.children[27].material.color = new THREE.Color ( 0, 0, 1 );
+			// group.children[28].material.color = new THREE.Color ( 0, 0, 1 );
+			// group.children[29].material.color = new THREE.Color ( 0, 0, 1 );
+			// group.children[56].material.color = new THREE.Color ( 0, 0, 1 );
 		
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
