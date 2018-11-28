@@ -68,7 +68,8 @@
 
 					// .dataSync() pull from gpu and give 1D js array
 					// Converts back to original shape
-					console.log(output.dataSync());
+					// console.log(output.dataSync());
+					console.log(output.shape);
 					var l = output.shape[1];
 					var m = output.shape[2];
 					var n = output.shape[3];
