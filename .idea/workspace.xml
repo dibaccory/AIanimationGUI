@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b3b481f5-18d2-4ef6-8380-8440e1caae9d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/lib/Layer.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/Layer.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/Network.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/Network.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/model.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/model.js" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -21,17 +19,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/main.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1215">
-              <caret line="81" column="46" selection-start-line="81" selection-start-column="46" selection-end-line="81" selection-end-column="46" />
+            <state relative-caret-position="956">
+              <caret line="83" column="44" selection-start-line="83" selection-start-column="44" selection-end-line="83" selection-end-column="44" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/Layer.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="401">
-              <caret line="119" column="22" selection-start-line="119" selection-start-column="22" selection-end-line="119" selection-end-column="22" />
+            <state relative-caret-position="113">
+              <caret line="187" column="35" lean-forward="true" selection-start-line="187" selection-start-column="35" selection-end-line="187" selection-end-column="35" />
             </state>
           </provider>
         </entry>
@@ -39,7 +37,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/visualai.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-145">
+            <state relative-caret-position="690">
               <caret line="46" lean-forward="true" selection-start-line="46" selection-end-line="46" />
             </state>
           </provider>
@@ -48,17 +46,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/model.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="588">
-              <caret line="284" column="38" lean-forward="true" selection-start-line="284" selection-start-column="13" selection-end-line="284" selection-end-column="38" />
+            <state relative-caret-position="-3687">
+              <caret lean-forward="true" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/Network.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="328">
-              <caret line="45" lean-forward="true" selection-start-line="45" selection-end-line="45" />
+            <state relative-caret-position="480">
+              <caret line="32" column="39" lean-forward="true" selection-start-line="32" selection-start-column="39" selection-end-line="32" selection-end-column="39" />
             </state>
           </provider>
         </entry>
@@ -94,9 +92,9 @@
         <option value="$PROJECT_DIR$/visualai.html" />
         <option value="$PROJECT_DIR$/project2.html" />
         <option value="$PROJECT_DIR$/lib/model.js" />
-        <option value="$PROJECT_DIR$/lib/Network.js" />
-        <option value="$PROJECT_DIR$/lib/main.js" />
         <option value="$PROJECT_DIR$/lib/Layer.js" />
+        <option value="$PROJECT_DIR$/lib/main.js" />
+        <option value="$PROJECT_DIR$/lib/Network.js" />
       </list>
     </option>
   </component>
@@ -183,7 +181,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="50340000" />
+    <option name="totallyTimeSpent" value="53330000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
@@ -237,36 +235,36 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/visualai.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-145">
+        <state relative-caret-position="690">
           <caret line="46" lean-forward="true" selection-start-line="46" selection-end-line="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="588">
-          <caret line="284" column="38" lean-forward="true" selection-start-line="284" selection-start-column="13" selection-end-line="284" selection-end-column="38" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/main.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1215">
-          <caret line="81" column="46" selection-start-line="81" selection-start-column="46" selection-end-line="81" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/Layer.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="401">
-          <caret line="119" column="22" selection-start-line="119" selection-start-column="22" selection-end-line="119" selection-end-column="22" />
+        <state relative-caret-position="956">
+          <caret line="83" column="44" selection-start-line="83" selection-start-column="44" selection-end-line="83" selection-end-column="44" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/Network.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="328">
-          <caret line="45" lean-forward="true" selection-start-line="45" selection-end-line="45" />
+        <state relative-caret-position="480">
+          <caret line="32" column="39" lean-forward="true" selection-start-line="32" selection-start-column="39" selection-end-line="32" selection-end-column="39" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3687">
+          <caret lean-forward="true" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/Layer.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="113">
+          <caret line="187" column="35" lean-forward="true" selection-start-line="187" selection-start-column="35" selection-end-line="187" selection-end-column="35" />
         </state>
       </provider>
     </entry>
