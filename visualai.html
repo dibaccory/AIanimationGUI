@@ -34,7 +34,9 @@
 		import {data, model} from './lib/model.js';
 
 		// The first function that loads
-		window.onload = function() {
+		window.onload = function() 
+		{
+
 			// wait for training to finish
 			setTimeout(function()
 			{
@@ -45,7 +47,8 @@
 		}
 
 		// Draws a line that connects the point p1 to point p2
-		function draw(p1, p2) {
+		function draw(p1, p2) 
+		{
 			var mat = new THREE.LineBasicMaterial({color:0x888888});
 			var geo = new THREE.Geometry();
 			geo.vertices.push( new THREE.Vertex(p1) );
@@ -55,7 +58,8 @@
 			return line
 		}
 		
-		function createLayer( mnistNetwork ) {
+		function createLayer( mnistNetwork ) 
+		{
 			for (var layer; layer < mnistNetwork.length; layer++ ) {	
 				v3loop( mnistNetwork[layer].volume, ( i, j, k ) => {
 					scene.add( mnistNetwork[layer].nodes[k][j][i] );
@@ -187,7 +191,8 @@
 		}
 		
 		// Initializes all the necessary variables for a basic THREE.js application
-		async function init() {
+		async function init() 
+		{
 		
 			container = document.createElement( 'div' );
 			document.body.appendChild( container );
@@ -218,8 +223,8 @@
 			scene.add( group );
 
 			// Layer visualizations
-			// input layer
-			var input = data.datasetImages.slice(IMAGE_SIZE*2, IMAGE_SIZE*3);
+			// input layer, select based off img size
+			var input = data.datasetImages.slice(IMAGE_SIZE*4, IMAGE_SIZE*5);
 			var img = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(img, scene, group, 0);
 			scene = stuffz.scene;
@@ -255,8 +260,11 @@
 			group = stuffz.group;
 			// console.log(output.dataSync());
 
+			// group.children[0].material.color = new THREE.Color ( 1, 0, 0 );
 			// group.children[27].material.color = new THREE.Color ( 0x00FF00 );
 			// group.children[28].material.color = new THREE.Color ( 0x00FF00 );
+			// group.children[29].material.color = new THREE.Color ( 0x00FF00 );
+			// group.children[56].material.color = new THREE.Color ( 0x00FF00 );
 		
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
@@ -281,12 +289,14 @@
 		}
 		
 		// For the raycaster
-		function highlightObject( event ) {
+		function highlightObject( event ) 
+		{
 		
 			event.preventDefault();
 		
 			// Restore the cube back to it's original once the mouse is no longer over it
-			if ( selectedObject ) {
+			if ( selectedObject ) 
+			{
 				selectedObject.material.color.set( selectedObject.original );
 				selectedObject = null;
 			}
@@ -294,18 +304,22 @@
 			var intersects = getIntersects( event.layerX, event.layerY );
 		
 			// If the mouse is intersecting with an object, change it's color
-			if ( intersects.length > 0 ) {
-				var res = intersects.filter( function ( res ) {
+			if ( intersects.length > 0 ) 
+			{
+				var res = intersects.filter( function ( res ) 
+				{
 					return res && res.object;
 				} )[ 0 ];
-				if ( res && res.object ) {
+				if ( res && res.object ) 
+				{
 					selectedObject = res.object;
 					selectedObject.material.color.set( HIGHLIGHT_COLOR );
 				}
 			}
 		}
 		
-		function getIntersects( x, y ) {
+		function getIntersects( x, y )
+		{
 		
 			x =  ( x / window.innerWidth  ) * 2 - 1;
 			y = -( y / window.innerHeight ) * 2 + 1;
@@ -315,15 +329,17 @@
 			return raycaster.intersectObject( group, true );
 		}
 		
-		function animate() {
+		function animate() 
+		{
 		
 			requestAnimationFrame( animate );
 			render();
 		
 		}
 		
-		function render() {
-		
+		function render() 
+		{
+
 			// Outer if statement is to check whether it's in play or pause mode
 			// Inner if statement is to rotate and pan camera around layers
 			if ( isPlaying ) {
@@ -346,15 +362,18 @@
 			renderer.render( scene, camera );
 		}
 		
-		function play() {
+		function play() 
+		{
 			isPlaying = true;
 		}
 		
-		function pause() {
+		function pause() 
+		{
 			isPlaying = false;
 		}
 		
-		function restart() {
+		function restart() 
+		{
 		
 			isPlaying = false;
 			THETA = 0;
@@ -363,6 +382,10 @@
 			camera.lookAt( scene.position );
 		
 		}
+
+		window.play = play;
+		window.pause = pause;
+		window.restart = restart;
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
