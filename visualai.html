@@ -54,7 +54,7 @@
 				init();
 				animate();
 				// console.log(model);
-			}, 15000);
+			}, 1000);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -201,7 +201,7 @@
 							var material = new THREE.MeshPhongMaterial( { color: colors } );
 							var cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
-							cube.position.y += 12*j;
+							cube.position.y += 12*(-j);
 							if(ilayer == 1)
 							{
 								cube.position.z += t*-25 + (-100*num);
@@ -321,12 +321,13 @@
 			
 			// Layer visualizations
 			// input layer
-			var input = data.datasetImages.slice(784, 1568);
+			var input = data.datasetImages.slice(IMAGE_SIZE*2, IMAGE_SIZE*3);
 			var img = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(img, scene, group, 0);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			ilayer = 0;
+			layerSize.push(IMAGE_SIZE);
 
 			// loop through conv and pool layers
 			var output = tf.tensor4d(img);
@@ -338,6 +339,7 @@
 				scene = stuffz.scene;
 				group = stuffz.group;
 				console.log(fmap);
+				layerSize.push(output.dataSync().length);
 			}
 
 			// flatten layer
@@ -350,6 +352,8 @@
 			group = stuffz.group;
 			dense1 = 0;
 			console.log(output.dataSync());
+			layerSize.push(output.dataSync().length);
+
 
 			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
@@ -357,8 +361,43 @@
 			scene = stuffz.scene;
 			group = stuffz.group;
 			console.log(output.dataSync());
+			layerSize.push(output.dataSync().length);
 		
+			for(let l = 0; l < IMAGE_SIZE; l++)
+			{
+				allColors.push(cubeArray[l].material.color);
+			}
 
+			// Wait to finish training for good outputs
+			setTimeout(function()
+			{	
+				var netout = tf.tensor4d(img);
+
+				for (let i = 0; i < layerSize.length; i++)
+				{	
+					var currOut, layerColors, tensorOut;
+
+					netout = model.getLayer('', i).apply(netout);
+
+					if(i != 4)
+					{
+						currOut = netout.dataSync();
+						if(i < layerSize.length - 2)
+						{
+							tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
+							findRGB(tensorOut, false);
+						}
+						else
+							findRGB(currOut, true);
+					}
+					currOut = null;
+					layerColors = null;
+					tensorOut = null;
+				}
+				netout = null;
+
+				console.log(allColors);
+			}, 10000);
 
 			var loader = new THREE.FontLoader();
 
@@ -920,14 +959,14 @@
 			if( plzRestart )
 			{
 				currentNode = 0;
-				for(let i = IMAGE_SIZE; i < group.children.length; i++)
-					group.children[i].material.color = new THREE.Color ( 0.3, 0.3, 0.3 );
+				for(let i = IMAGE_SIZE; i < cubeArray.length; i++)
+					cubeArray[i].material.color = new THREE.Color ( 0.3, 0.3, 0.3 );
 			}
 
 			if( isFinished )
 			{
-				for (let i = 0; i < allColors.length; i++)
-					group.children[i].material.color = allColors[i];
+				for (let i = 0; i < cubeArray.length; i++)
+					cubeArray[i].material.color = allColors[i];
 			}
 		
 			controls.update();
@@ -949,7 +988,8 @@
 			scene.position.set( 0, 0, 0 );
 			camera.position.set( 0, 0, RADIUS );
 			camera.lookAt( scene.position );
-		
+			plzRestart = true;
+			isFinished = false;
 		}
 
 		function finish() 
