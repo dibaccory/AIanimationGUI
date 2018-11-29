@@ -25,7 +25,6 @@
 		var linesInScene = [];
 		var cubeArray = [];
 		var numbox = 0;
-		var allColors = [];
 		var kernelShape = model.layers[0].getWeights()[0].shape[0];
 		var filterSize = model.layers[0].getWeights()[0].shape[3];
 		var currentNode = 0, x = 0;
@@ -33,6 +32,8 @@
 		var allColors = [];
 		var lineGroup;
 		var cubeToAnimate = 784;
+		var waitOver = false;
+		var IMG;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -43,18 +44,17 @@
 		const PANSPEED = 5, ROTATIONSPEED = 1;
 		const PANDISTANCE = 0;	                            // Determines how far the camera pans
 		const IMAGE_SIZE = 784;
+		const WAIT_TIME = 20000;
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
 
 		// The first function that loads
 		window.onload = function() {
-			setTimeout(function()
-			{
-				init();
-				animate();
-				// console.log(model);
-			}, 1000);
+
+			init();
+			animate();
+			// console.log(model);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -322,15 +322,15 @@
 			// Layer visualizations
 			// input layer
 			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
-			var img = oneDToMany(input, 1, 28, 28);
-			var stuffz = imgVis(img, scene, group, 0);
+			IMG = oneDToMany(input, 1, 28, 28);
+			var stuffz = imgVis(IMG, scene, group, 0);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			ilayer = 0;
 			layerSize.push(IMAGE_SIZE);
 
 			// loop through conv and pool layers
-			var output = tf.tensor4d(img);
+			var output = tf.tensor4d(IMG);
 			for(let i = 0; i < 4; i++)
 			{
 				var output = model.getLayer('', i).apply(output);
@@ -371,7 +371,7 @@
 			// Wait to finish training for good outputs
 			setTimeout(function()
 			{	
-				var netout = tf.tensor4d(img);
+				var netout = tf.tensor4d(IMG);
 
 				for (let i = 0; i < layerSize.length; i++)
 				{	
@@ -397,7 +397,8 @@
 				netout = null;
 
 				console.log(allColors);
-			}, 20000);
+				waitOver = true;
+			}, WAIT_TIME);
 
 			var loader = new THREE.FontLoader();
 
@@ -714,7 +715,12 @@
 		
 			// Restore the cube back to it's original once the mouse is no longer over it
 			if ( selectedObject ) {
-				selectedObject.material.color.set( selectedObject.original );
+
+				if (waitOver)
+					selectedObject.material.color.set( allColors[selectedObject.number] );
+				else
+					selectedObject.material.color.set( selectedObject.original );
+
 				selectedObject = null;
 
 
@@ -960,14 +966,21 @@
 			if( plzRestart )
 			{
 				currentNode = 0;
+				for (let i = 0; i < IMAGE_SIZE; i++)
+					cubeArray[i].material.color = allColors[i];
 				for(let i = IMAGE_SIZE; i < cubeArray.length; i++)
 					cubeArray[i].material.color = new THREE.Color ( 0.3, 0.3, 0.3 );
+
+				plzRestart = false;
 			}
 
 			if( isFinished )
 			{
 				for (let i = 0; i < cubeArray.length; i++)
+				{
 					cubeArray[i].material.color = allColors[i];
+				}
+				isFinished = false;
 			}
 		
 			controls.update();
@@ -977,11 +990,13 @@
 		function play() {
 			isPlaying = true;
 			plzRestart = false;
+			isFinished = false;
 		}
 		
 		function pause() {
 			isPlaying = false;
 			plzRestart = false;
+			isFinished = false;
 		}
 		
 		function restart() {
@@ -998,6 +1013,7 @@
 		function finish() 
 		{
 			isFinished = true;
+			isPlaying = false;
 			plzRestart = false;
 		}
 
