@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b3b481f5-18d2-4ef6-8380-8440e1caae9d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/visualai.html" beforeDir="false" afterPath="$PROJECT_DIR$/visualai.html" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -37,8 +36,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/visualai.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="119">
-              <caret line="810" column="9" selection-start-line="810" selection-start-column="9" selection-end-line="810" selection-end-column="9" />
+            <state relative-caret-position="-1133">
+              <caret line="820" column="45" selection-start-line="820" selection-start-column="45" selection-end-line="820" selection-end-column="45" />
             </state>
           </provider>
         </entry>
@@ -194,7 +193,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="22992000" />
+    <option name="totallyTimeSpent" value="23339000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
@@ -282,8 +281,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/visualai.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="810" column="9" selection-start-line="810" selection-start-column="9" selection-end-line="810" selection-end-column="9" />
+        <state relative-caret-position="-1133">
+          <caret line="820" column="45" selection-start-line="820" selection-start-column="45" selection-end-line="820" selection-end-column="45" />
         </state>
       </provider>
     </entry>

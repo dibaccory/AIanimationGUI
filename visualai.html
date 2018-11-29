@@ -807,18 +807,19 @@
 		
 		}
 
-		function animationTime(i)
+		function drawLines(i)
 		{
                 for(let line = 0; line < cubeArray[i].lines.length; line++) {
                     drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
                 	}
 
-				setTimeout( () => {
-                	for (let k = 0; k < linesInScene.length; k++)
-                    	scene.remove( linesInScene[k] );
-                	linesInScene = [];
-                }, 100);
+		}
 
+		function removeLines()
+		{
+			for (let k = 0; k < linesInScene.length; k++)
+				scene.remove( linesInScene[k] );
+			linesInScene = [];
 		}
 
 		function convAnimate()
@@ -906,10 +907,11 @@
 				//  	scene.position.z  += PANSPEED;
 
 				// }
-
+                removeLines();
 				// convAnimate();
 				if(cubeToAnimate < cubeArray.length) {
-                    animationTime(cubeToAnimate);
+                    drawLines(cubeToAnimate);
+
                     cubeToAnimate++;
                 }
 			}
