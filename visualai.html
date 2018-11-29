@@ -852,11 +852,59 @@
 		
 		}
 
-		function drawLines(i)
+
+
+		function layerVolume(l)
 		{
-                for(let line = 0; line < cubeArray[i].lines.length; line++) {
+		    let d;
+            switch (l)
+            {
+                case 0:
+                    d = {x: 24, y: 24, z: 6};
+                    break;
+
+                case 1:
+                    d = {x: 12, y: 12, z: 6};
+                    break;
+
+                case 2:
+                    d = {x: 8, y: 8, z: 8};
+                    break;
+
+                case 3:
+                    d = {x: 4, y: 4, z: 8};
+                    break;
+            }
+            return d;
+		}
+
+		function animateLines(i)
+		{
+            let volume = [784, 4240, 5104, 5616, 5744, 5794];
+		    let layer = whichLayer(i);
+		    let v = layerVolume(layer);
+
+			for(let line = 0; line < cubeArray[i].lines.length; line++)
+			{
+			    if(v && layer !=2)
+				{
+                	for(let depth = 0; depth < v.z; depth++)
+                    	drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
+                }
+			    else
                     drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
-                	}
+
+            }
+            if(layer < 4) {
+                if((i - volume[layer] < v.x * v.y))
+				{
+				    cubeToAnimate++;
+				}
+                else
+                	cubeToAnimate = volume[layer + 1];
+            }
+            else
+                cubeToAnimate++;
 
 		}
 
@@ -955,10 +1003,9 @@
                 removeLines();
 				// convAnimate();
 				if(cubeToAnimate < cubeArray.length) {
-                    drawLines(cubeToAnimate);
+                    animateLines(cubeToAnimate);
                     cubeArray[cubeToAnimate].material.color = allColors[cubeToAnimate];
-
-                    cubeToAnimate++;
+                    
                 }
 			}
 
