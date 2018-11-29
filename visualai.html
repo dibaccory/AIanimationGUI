@@ -22,7 +22,7 @@
 		var mouse = new THREE.Vector3();                    // For the raycaster
 		var selectedObject = null, group;                   // For the raycaster
 		var theta = 0;                                      // Camera rotating during animation
-		var lines = [];
+		var linesInScene = [];
 		var cubeArray = [];
 		var numbox = 0;
 		var allColors = [];
@@ -34,7 +34,7 @@
 		var lineGroup;
 
 		// Button stuff
-		var isFinished = false, plzRestart = false, isPlaying = true;
+		var isFinished = false, plzRestart = false, isPlaying = false;
 
 		// CONSTANTS
 		const RADIUS = 750;                                   // Camera rotation and movement
@@ -68,6 +68,19 @@
 
 			return line;
 		}
+
+        function drawLine( from, to ) {
+            var mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+            var geo = new THREE.Geometry();
+            geo.vertices.push( from );
+            geo.vertices.push( to );
+            var line = new THREE.Line( geo, mat );
+            linesInScene.push(line);
+            scene.add( line );
+            // lineGroup.add(line);
+
+            return line;
+        }
 
 		function findRGB( layer, dense )
 		{
@@ -197,11 +210,17 @@
 								cube.position.z += t*-25 + (-200*num);
 							}
 							cube.original = colors;
+
 							cube.number = numbox++;
+                        	cubeArray.push( cube);
+                        	if(cube.number > 783)
+                        	{
+                            	getLinesForCube(cube);
+                        	}
 
 							scene.add( cube );
 							group.add( cube );
-							cubeArray.push( cube);
+
 
 					}
 				}
@@ -245,10 +264,12 @@
 				}
 				cube.original = colors;
 				cube.number = numbox++;
+				//console.log(cube.number);
+                cubeArray.push( cube);
+                getLinesForCube(cube);
 
 				scene.add( cube );
 				group.add( cube );
-				cubeArray.push( cube);
 
 			}
 
@@ -266,6 +287,8 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.setPixelRatio( window.devicePixelRatio );
 			container.appendChild( renderer.domElement );
+
+
 		
 			// Setting the scene
 			scene = new THREE.Scene();
@@ -276,6 +299,10 @@
 			camera.position.set( 0, 0, RADIUS );
 			camera.lookAt( scene.position );
 			scene.add( camera );
+
+            controls = new THREE.OrbitControls( camera, renderer.domElement );
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
 		
 			// Light stuff
 			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.5 );
@@ -330,9 +357,7 @@
 			group = stuffz.group;
 			console.log(output.dataSync());
 		
-			controls = new THREE.OrbitControls( camera, renderer.domElement );
-			controls.enableDamping = true;
-			controls.dampingFactor = 0.25;
+
 
 			var loader = new THREE.FontLoader();
 
@@ -497,6 +522,150 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 		
 		}
+		//
+		// function getAllLines()
+		// {
+		//     lines[0] = [];
+		//     lines[1] = [];
+		//     lines[2] = [];
+		//     lines[3] = [];
+		//     lines[4] = [];
+		//     lines[5] = [];
+		//
+		//     for(let i = 784; i < cubeArray.length; i++)
+		// 	{
+		// 	    //get layer cube is in
+		// 		let layer = whichLayer(cubeArray[i]);
+		//
+        //         lines[layer][]
+		// 		//get array of lines for this cube
+		// 		let linesForCube = getLinesForCube(layer, cubeArray[i]);
+		// 		lines[layer][i].push(linesForCube);
+		//
+		// 	}
+		// }
+
+		function getLinesForCube(cube)
+		{
+		    let index = whichLayer(cube.number);
+		    console.log(cube.number);
+
+			cube.lines = [];
+			let i,j,k;
+		    switch (index)
+			{
+				case 0:
+                    for (i = -2; i <= 2; i++)
+                    {
+                        for (j = -2; j <= 2; j++)
+                        {
+                            var col = Math.floor((( cube.number - 784 ) % 576 ) / 24);
+                            var row = (( cube.number - 784 ) % 576 ) % 24;
+
+                            cube.lines.push( {from: cubeArray[ cube.number ].position,
+                                to: cubeArray[ col * 28 + 58 + row + i + 28*j].position } );
+                        }
+                    }
+                    break;
+
+				case 1:
+                    for (i = 0; i <= 1; i++)
+                    {
+                        for (j = 0; j <= 1; j++)
+                        {
+                            var col = Math.floor((( cube.number - 4240 ) % 144 ) / 12);
+                            var row = (( cube.number - 4240 ) % 144 ) % 12;
+
+                            cube.lines.push( {from: cubeArray[ cube.number ].position,
+                                to: cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position } );
+                        }
+                    }
+                    break;
+
+				case 2:
+                    for (k = 0; k < 6; k++)
+                    {
+                        for (i = -2; i <= 2; i++)
+                        {
+                            for (j = -2; j <= 2; j++)
+                            {
+                                var col = Math.floor((( cube.number - 5104 ) % 64 ) / 8);
+                                var row = (( cube.number - 5104 ) % 64 ) % 8;
+
+                                cube.lines.push( { from: cubeArray[ cube.number ].position,
+                                    to: cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j].position } );
+                            }
+                        }
+                    }
+                    break;
+
+				case 3:
+                    for (i = 0; i <= 1; i++)
+                    {
+                        for (j = 0; j <= 1; j++)
+                        {
+                            var col = Math.floor((( cube.number - 5616 ) % 16 ) / 4);
+                            var row = (( cube.number - 5616 ) % 16 ) % 4;
+
+                            cube.lines.push( {from: cubeArray[ cube.number ].position,
+                                 to: cubeArray[ 5552 + 8 * col*2 + i + 8 * j + row*2].position } );
+                        }
+                    }
+                    break;
+
+				case 4:
+                    for (j = 5616; j <= 5743; j++)
+                    {
+                        cube.lines.push( {from: cubeArray[ cube.number ].position,
+                            to: cubeArray[ j ].position } );
+                    }
+                    break;
+
+				case 5:
+                    for (j = 5744; j <= 5793; j++)
+                    {
+                        cube.lines.push( {from: cubeArray[ cube.number ].position,
+                            to: cubeArray[ j ].position } );
+                    }
+                    break;
+
+			}
+		    //lines[6][ALL_NODES_IN_THIS][paths for each nodes]
+
+		}
+
+		function whichLayer(i)
+		{
+		    let inLayer = (i, a, b) => {return i >= a && i <= b};
+		    let index = -1;
+		    switch (true)
+			{
+				case inLayer(i, 784, 4239):
+				    index = 0;
+				    break;
+
+				case inLayer(i, 4240, 5103):
+				    index = 1;
+				    break;
+
+				case inLayer(i, 5104, 5615):
+				    index = 2;
+				    break;
+
+				case inLayer(i, 5616, 5743):
+				    index = 3;
+				    break;
+
+				case inLayer(i, 5744, 5793):
+				    index = 4;
+				    break;
+
+				case inLayer(i, 5794, 5803):
+				    index = 5;
+				    break;
+			}
+		    return index;
+		}
 		
 		// For the raycaster
 		function highlightObject( event ) {
@@ -508,8 +677,10 @@
 				selectedObject.material.color.set( selectedObject.original );
 				selectedObject = null;
 
-				for (var i = 0; i < lines.length; i++)
-					scene.remove( lines[i] );
+
+				for (var i = 0; i < linesInScene.length; i++)
+					scene.remove( linesInScene[i] );
+				linesInScene = [];
 			}
 		
 			var intersects = getIntersects( event.layerX, event.layerY );
@@ -519,10 +690,19 @@
 				var res = intersects.filter( function ( res ) {
 					return res && res.object;
 				} )[ 0 ];
-				if ( res && res.object ) {
-					selectedObject = res.object;
-					selectedObject.material.color.set( HIGHLIGHT_COLOR );
-					console.log(selectedObject.number);
+                if ( res && res.object ) {
+                    selectedObject = res.object;
+                    selectedObject.material.color.set(HIGHLIGHT_COLOR);
+
+
+                    if(selectedObject.number > 783){
+                        //console.log(selectedObject.number);
+                    	for(let line = 0; line < selectedObject.lines.length; line++) {
+                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to);
+                    	}
+                    }
+                }
+				/*
 
 					// First Conv
 					if (selectedObject.number >= 784 && selectedObject.number <= 4239)
@@ -605,7 +785,7 @@
 							                  cubeArray[ j ].position ) );
 						}
 					}
-				}
+				}*/
 			}
 		}
 		
@@ -624,6 +804,24 @@
 			requestAnimationFrame( animate );
 			render();
 		
+		}
+
+		function animationTime()
+		{
+		    for(let i = 784; i < cubeArray.length; i++)
+			{
+
+
+                for(let line = 0; line < cubeArray[i].lines.length; line++) {
+                    drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
+                }
+
+				setTimeout( () => {
+                	for (let k = 0; k < linesInScene.length; k++)
+                    	scene.remove( linesInScene[k] );
+                	linesInScene = [];
+                }, 100);
+			}
 		}
 
 		function convAnimate()
@@ -713,6 +911,7 @@
 				// }
 
 				// convAnimate();
+				animationTime();
 			}
 
 			// restart
