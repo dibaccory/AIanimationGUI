@@ -32,6 +32,7 @@
 		var layerSize = [];
 		var allColors = [];
 		var lineGroup;
+		var cubeToAnimate = 784;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -806,22 +807,18 @@
 		
 		}
 
-		function animationTime()
+		function animationTime(i)
 		{
-		    for(let i = 784; i < cubeArray.length; i++)
-			{
-
-
                 for(let line = 0; line < cubeArray[i].lines.length; line++) {
                     drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
-                }
+                	}
 
 				setTimeout( () => {
                 	for (let k = 0; k < linesInScene.length; k++)
                     	scene.remove( linesInScene[k] );
                 	linesInScene = [];
                 }, 100);
-			}
+
 		}
 
 		function convAnimate()
@@ -911,7 +908,10 @@
 				// }
 
 				// convAnimate();
-				animationTime();
+				if(cubeToAnimate < cubeArray.length) {
+                    animationTime(cubeToAnimate);
+                    cubeToAnimate++;
+                }
 			}
 
 			// restart
@@ -941,7 +941,7 @@
 		}
 		
 		function restart() {
-		
+            cubeToAnimate = 784;
 			isPlaying = false;
 			theta = 0;
 			scene.position.set( 0, 0, 0 );
