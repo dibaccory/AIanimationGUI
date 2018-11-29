@@ -27,6 +27,7 @@
 		var selectedObject = null, group;                   // For the raycaster
 		var panDistance = 200;								// Determines how face the camera pans
 		var oricolor = [];
+		var kernelShape = model.layers[0].getWeights()[0].shape[0];
 		var currentNode = 0, x = 0;
 
 		// CONSTANTS
@@ -38,8 +39,11 @@
 		// The first function that loads
 		window.onload = function() 
 		{
+			setTimeout(function()
+			{
 				init();
 				animate();
+			}, 20000);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -236,7 +240,7 @@
 				var stuffz = imgVis(fmap, scene, group, i+1);
 				scene = stuffz.scene;
 				group = stuffz.group;
-				// console.log(fmap);
+				console.log(fmap);
 			}
 
 			// flatten layer
@@ -333,9 +337,9 @@
 				// Recolors original color after highlighting with kernel and ops
 				setTimeout(function()
 				{
-					for(let z = -Math.floor(5/2); z < Math.floor(5/2)+1; z++)
+					for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
 					{	
-						for(let s = currentNode-Math.floor(5/2); s < currentNode+Math.floor(5/2)+1; s++)
+						for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
 						{	
 							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
 								group.children[z*28+s].material.color = oricolor[z*28+s];
@@ -346,10 +350,10 @@
 
 				// kernel highlight of current computation
 				y = 0;
-				for(let z = -Math.floor(5/2); z < Math.floor(5/2)+1; z++)
+				for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
 				{	
 					r = 0;
-					for(let s = currentNode-Math.floor(5/2); s < currentNode+Math.floor(5/2)+1; s++)
+					for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
 					{	
 						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
 						{
