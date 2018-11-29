@@ -33,6 +33,7 @@
 		var isFinished = false;
 		var plzRestart = false;
 		var allColors = [];
+		var lineGroup;
 
 		// CONSTANTS
 		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
@@ -53,13 +54,15 @@
 		// Draws a line that connects the point p1 to point p2
 		function draw(p1, p2) 
 		{
-			var mat = new THREE.LineBasicMaterial({color:0x888888});
+			var mat = new THREE.LineBasicMaterial({color:0x00FF00});
 			var geo = new THREE.Geometry();
-			geo.vertices.push( new THREE.Vertex(p1) );
-			geo.vertices.push( new THREE.Vertex(p2) );
+			geo.vertices.push( p1 );
+			geo.vertices.push( p2 );
 			var line = new THREE.Line(geo);
 			scene.add(line);
-			return line
+			lineGroup.add(line);
+
+			// return line
 		}
 		
 		function createLayer( mnistNetwork ) 
@@ -153,7 +156,7 @@
 
 		// layer rendering abstraction
 		var ilayer = 1;
-		function imgVis(layer, scene, group, num, finish)
+		function imgVis(layer, scene, group, num)
 		{
 			var R, B, G;
 			var geometry = new THREE.BoxGeometry(10, 10, 10);
@@ -172,27 +175,9 @@
 							}
 							else
 							{
-								if(!finish)
-								{
-									R = 0.3;
-									B = 0.3;
-									G = 0.3;
-								}
-								// else
-								// {
-								// 	if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
-								// 	{
-								// 		R = 0;
-								// 		B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								// 		G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								// 	}
-								// 	else
-								// 	{
-								// 		B = 0;
-								// 		R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
-								// 		G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								// 	}
-								// }
+								R = 0.3;
+								B = 0.3;
+								G = 0.3;
 							}
 
 							var colors = new THREE.Color( R, G, B );
@@ -219,34 +204,16 @@
 		}
 
 		var dense1 = 1;
-		function denseVis(layer, scene, group, num, finish)
+		function denseVis(layer, scene, group, num)
 		{
 			var R, B, G;
 			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
-				if(!finish)
-				{
-					R = 0.3;
-					B = 0.3;
-					G = 0.3;
-				}
-				// else
-				// {
-				// 	if(layer[j+layer.length/2] <= .5)
-				// 	{
-				// 		R = 0;
-				// 		B = 1 - 2*layer[j+layer.length/2];
-				// 		G = 2*layer[j+layer.length/2];
-				// 	}
-				// 	else
-				// 	{
-				// 		B = 0;
-				// 		R = 2*layer[j+layer.length/2] - 1;
-				// 		G = 2 - 2*layer[j+layer.length/2];
-				// 	}
-				// }
+				R = 0.3;
+				B = 0.3;
+				G = 0.3;
 
 				var colors = new THREE.Color( R, G, B );
 				var material = new THREE.MeshBasicMaterial( { color: colors } );
@@ -298,13 +265,15 @@
 			// A Raycaster can tell what object is the mouse hovering over
 			raycaster = new THREE.Raycaster();
 			group = new THREE.Group();
+			lineGroup = new THREE.Group();
 			scene.add( group );
+			scene.add( lineGroup );
 
 			// Layer visualizations
 			// input layer, select based off img size
 			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
 			var img = oneDToMany(input, 1, 28, 28);
-			var stuffz = imgVis(img, scene, group, 0, false);
+			var stuffz = imgVis(img, scene, group, 0);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			ilayer = 0;
@@ -316,7 +285,7 @@
 			{
 				var output = model.getLayer('', i).apply(output);
 				var fmap = oneDToMany(output.dataSync(), output.shape[3], output.shape[2], output.shape[1]);
-				var stuffz = imgVis(fmap, scene, group, i+1, false);
+				var stuffz = imgVis(fmap, scene, group, i+1);
 				scene = stuffz.scene;
 				group = stuffz.group;
 				layerSize.push(output.dataSync().length);
@@ -326,7 +295,7 @@
 			var output = model.getLayer('', 4).apply(output);
 			// 1st dense layer
 			var output = model.getLayer('', 5).apply(output);
-			var stuffz = denseVis(output.dataSync(), scene, group, 5, false);
+			var stuffz = denseVis(output.dataSync(), scene, group, 5);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			layerSize.push(output.dataSync().length);
@@ -335,7 +304,7 @@
 
 			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
-			var stuffz = denseVis(output.dataSync(), scene, group, 6, false);
+			var stuffz = denseVis(output.dataSync(), scene, group, 6);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			layerSize.push(output.dataSync().length);
@@ -393,12 +362,11 @@
 		}
 		
 		// The program adapts to the size of the browser window
-		function resize() {
-		
+		function resize() 
+		{
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 			renderer.setSize( window.innerWidth, window.innerHeight );
-		
 		}
 		
 		// For the raycaster
@@ -445,9 +413,44 @@
 		function convAnimate()
 		{
 			var y = 0, r = 0;
+			var line;
 
 			if (currentNode < IMAGE_SIZE)
 			{	
+
+				// kernel highlight of current computation
+				y = 0;
+				for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
+				{	
+					r = 0;
+					for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
+					{	
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+						{
+							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
+
+							line = draw(group.children[z*28+s].position, group.children[currentNode+IMAGE_SIZE].position);
+							// lineGroup.add(line);
+						}
+
+						// color center of kernel
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+						{
+							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
+
+							line = draw(group.children[z*28+s].position, group.children[z*28+s+IMAGE_SIZE].position);
+							// lineGroup.add(line);
+
+							for(let v = 1; v <= filterSize; v++)
+								group.children[z*28+s+IMAGE_SIZE*v].material.color = new THREE.Color ( 1, 0, 0 );
+						}
+
+
+						r += 1;
+					}
+					y += 1;
+				}
+
 				// Recolors original color after highlighting with kernel and ops
 				setTimeout(function()
 				{	
@@ -466,36 +469,15 @@
 									group.children[z*28+s+IMAGE_SIZE*v].material.color = allColors[z*28+s+IMAGE_SIZE*v];
 							}
 
+							scene.remove(lineGroup.children[0]);
+							lineGroup.remove(lineGroup.children[0]);
+							console.log(lineGroup.children);
 							r += 1;
 						}
 						y += 1;
 					}
 					currentNode += 1;
 				}, 10);
-
-				// kernel highlight of current computation
-				y = 0;
-				for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
-				{	
-					r = 0;
-					for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
-					{	
-						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-						{
-							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
-						}
-						// color center of kernel
-						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
-						{
-							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
-							for(let v = 1; v <= filterSize; v++)
-								group.children[z*28+s+IMAGE_SIZE*v].material.color = new THREE.Color ( 1, 0, 0 );
-						}
-
-						r += 1;
-					}
-					y += 1;
-				}
 			}
 		}
 		
@@ -512,18 +494,18 @@
 			// Inner if statement is to rotate and pan camera around layers
 			if ( isPlaying ) 
 			{
-				if ( THETA < 90 ) 
-				{
-					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( THETA ) );
-					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
-					camera.lookAt( scene.position );
-					THETA += ROTATIONSPEED;
-				} 
-				else if ( scene.position.z < panDistance ) 
-				{
-					camera.position.z -= PANSPEED;
-					scene.position.z  += PANSPEED;
-				}
+				// if ( THETA < 90 ) 
+				// {
+				// 	camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( THETA ) );
+				// 	camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
+				// 	camera.lookAt( scene.position );
+				// 	THETA += ROTATIONSPEED;
+				// } 
+				// else if ( scene.position.z < panDistance ) 
+				// {
+				// 	camera.position.z -= PANSPEED;
+				// 	scene.position.z  += PANSPEED;
+				// }
 
 				// show network computation
 				convAnimate();
@@ -563,10 +545,10 @@
 		function restart() 
 		{
 			isPlaying = false;
-			THETA = 0;
-			scene.position.set( 0, 0, 0 );
-			camera.position.set( 0, 0, RADIUS );
-			camera.lookAt( scene.position );
+			// THETA = 0;
+			// scene.position.set( 0, 0, 0 );
+			// camera.position.set( 0, 0, RADIUS );
+			// camera.lookAt( scene.position );
 			plzRestart = true;
 			isFinished = false;
 		}
