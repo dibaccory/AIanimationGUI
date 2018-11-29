@@ -23,12 +23,15 @@
 		var mouse = new THREE.Vector3();                    // For the raycaster
 		var selectedObject = null, group;                   // For the raycaster
 		var panDistance = 200;								// Determines how face the camera pans
+		var oricolor = [];
+		var q = 0, x = 0;
 
 		// CONSTANTS
 		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
 		var HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
 		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1, LAYER_DELAY;
 		var IMAGE_SIZE = 784;
+
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
@@ -260,60 +263,61 @@
 			group = stuffz.group;
 			// console.log(output.dataSync());
 
-			var m = 0, y = 0, r = 0, x = 0;
-			var oricolor = [];
-
-			for(let q = 0; q < IMAGE_SIZE; q++)
+			for(let l = 0; l < IMAGE_SIZE; l++)
 			{
-				oricolor.push(group.children[q].material.color);
+				oricolor.push(group.children[l].material.color);
 			}
-			console.log(oricolor);
-			// Kernel animation
-			setTimeout(function()
-			{
-				for(let q = 0; q < IMAGE_SIZE; q++)
-				{
-					setTimeout(function()
-					{
-						y = 0;
-						// range of z changing when it shouldn't?
-						for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
-						{	
-							r = 0;
-							for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
-							{	
-								if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-								{
-									// oricolor.push(group.children[z*28+s].material.color);
-									group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
-								}
-								// color center of kernel
-								if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
-									group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
+			// console.log(oricolor);
 
-								r += 1;
-							}
-							y += 1;
-						}
-					}, q*50);
+			// var m = 0, y = 0, r = 0, x = 0;
+			// // Kernel animation
+			// setTimeout(function()
+			// {
+			// 	for(let q = 0; q < IMAGE_SIZE; q++)
+			// 	{
+			// 		setTimeout(function()
+			// 		{
+			// 			y = 0;
+			// 			// range of z changing when it shouldn't?
+			// 			for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
+			// 			{	
+			// 				r = 0;
+			// 				for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
+			// 				{	
+			// 					if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+			// 					{
+			// 						// oricolor.push(group.children[z*28+s].material.color);
+			// 						group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
+			// 					}
+			// 					// color center of kernel
+			// 					if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+			// 						group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
 
-					setTimeout(function()
-					{
-						setTimeout(function()
-						{	
-							console.log(oricolor);
-							for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
-							{	
-								for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
-								{	
-									if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-										group.children[z*28+s].material.color = oricolor[z*28+s];
-								}
-							}
-						}, q*50);
-					}, 19);
-				}
-			}, 1000);
+			// 					r += 1;
+			// 				}
+			// 				y += 1;
+			// 			}
+			// 		}, q*50);
+
+			// 		setTimeout(function()
+			// 		{
+			// 			setTimeout(function()
+			// 			{	
+			// 				console.log(oricolor);
+			// 				for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
+			// 				{	
+			// 					for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
+			// 					{	
+			// 						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+			// 							group.children[z*28+s].material.color = oricolor[z*28+s];
+			// 					}
+			// 				}
+			// 			}, q*50);
+			// 		}, 30);
+			// 	}
+			// }, 1000);
+
+
 			// group.children[0].material.color = new THREE.Color ( 0, 0, 1 );
 			// group.children[27].material.color = new THREE.Color ( 0, 0, 1 );
 			// group.children[28].material.color = new THREE.Color ( 0, 0, 1 );
@@ -382,6 +386,52 @@
 		
 			return raycaster.intersectObject( group, true );
 		}
+
+		function convAnimate()
+		{
+			var y = 0, r = 0;
+
+			if (q < IMAGE_SIZE)
+			{
+				setTimeout(function()
+				{
+					for(let z = -Math.floor(5/2); z < Math.floor(5/2)+1; z++)
+					{	
+						for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
+						{	
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+								group.children[z*28+s].material.color = oricolor[z*28+s];
+						}
+					}
+					q += 1;
+				}, 10);
+
+				// setTimeout(function()
+				// {
+					y = 0;
+					// range of z changing when it shouldn't?
+					for(let z = -Math.floor(5/2); z < Math.floor(5/2)+1; z++)
+					{	
+						r = 0;
+						for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
+						{	
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+							{
+								// oricolor.push(group.children[z*28+s].material.color);
+								group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
+							}
+							// color center of kernel
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+								group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
+
+							r += 1;
+						}
+						y += 1;
+					}
+				// }, 10);
+
+			}
+		}
 		
 		function animate() 
 		{
@@ -396,20 +446,27 @@
 
 			// Outer if statement is to check whether it's in play or pause mode
 			// Inner if statement is to rotate and pan camera around layers
-			if ( isPlaying ) {
-				if ( THETA < 90 ) {
-		
+			if ( isPlaying ) 
+			{
+				if ( THETA < 90 ) 
+				{
 					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( THETA ) );
 					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
 					camera.lookAt( scene.position );
 					THETA += ROTATIONSPEED;
-		
-				} else if ( scene.position.z < panDistance ) {
-		
+				} 
+				else if ( scene.position.z < panDistance ) 
+				{
 					camera.position.z -= PANSPEED;
 					scene.position.z  += PANSPEED;
-		
 				}
+
+				convAnimate();
+			}
+
+			if(!isPlaying && THETA == 0)
+			{
+				q = 0;
 			}
 		
 			controls.update();
