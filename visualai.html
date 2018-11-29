@@ -28,6 +28,7 @@
 		var panDistance = 200;								// Determines how face the camera pans
 		var oricolor = [];
 		var kernelShape = model.layers[0].getWeights()[0].shape[0];
+		var filterSize = model.layers[0].getWeights()[0].shape[3];
 		var currentNode = 0, x = 0;
 
 		// CONSTANTS
@@ -39,11 +40,11 @@
 		// The first function that loads
 		window.onload = function() 
 		{
-			setTimeout(function()
-			{
+			// setTimeout(function()
+			// {
 				init();
 				animate();
-			}, 20000);
+			// }, 20000);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -112,18 +113,21 @@
 							}
 							else
 							{
-								if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
-								{
-									R = 0;
-									B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-									G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
-								else
-								{
-									B = 0;
-									R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
-									G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
+								R = 0.3;
+								B = 0.3;
+								G = 0.3;
+								// if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
+								// {
+								// 	R = 0;
+								// 	B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								// 	G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								// }
+								// else
+								// {
+								// 	B = 0;
+								// 	R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
+								// 	G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								// }
 							}
 
 							var colors = new THREE.Color( R, G, B );
@@ -157,18 +161,21 @@
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
-				if(layer[j+layer.length/2] <= .5)
-				{
-					R = 0;
-					B = 1 - 2*layer[j+layer.length/2];
-					G = 2*layer[j+layer.length/2];
-				}
-				else
-				{
-					B = 0;
-					R = 2*layer[j+layer.length/2] - 1;
-					G = 2 - 2*layer[j+layer.length/2];
-				}
+				R = 0.3;
+				B = 0.3;
+				G = 0.3;
+				// if(layer[j+layer.length/2] <= .5)
+				// {
+				// 	R = 0;
+				// 	B = 1 - 2*layer[j+layer.length/2];
+				// 	G = 2*layer[j+layer.length/2];
+				// }
+				// else
+				// {
+				// 	B = 0;
+				// 	R = 2*layer[j+layer.length/2] - 1;
+				// 	G = 2 - 2*layer[j+layer.length/2];
+				// }
 
 				var colors = new THREE.Color( R, G, B );
 				var material = new THREE.MeshBasicMaterial( { color: colors } );
@@ -361,7 +368,11 @@
 						}
 						// color center of kernel
 						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+						{
 							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
+							for(let v = 1; v <= filterSize; v++)
+								group.children[z*28+s+IMAGE_SIZE*v].material.color = new THREE.Color ( 1, 0, 0 );
+						}
 
 						r += 1;
 					}
@@ -404,6 +415,8 @@
 			if(!isPlaying && THETA == 0)
 			{
 				currentNode = 0;
+				for(let i = IMAGE_SIZE; i < group.children.length; i++)
+					group.children[i].material.color = new THREE.Color ( 0.3, 0.3, 0.3 );
 			}
 		
 			controls.update();
