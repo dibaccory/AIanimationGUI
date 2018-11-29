@@ -116,7 +116,7 @@
 							}
 
 							var colors = new THREE.Color( R, G, B );
-							var material = new THREE.MeshLambertMaterial( { color: colors } );
+							var material = new THREE.MeshPhongMaterial( { color: colors } );
 							var cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
 							cube.position.y += 12*j;
@@ -164,7 +164,7 @@
 				}
 
 				var colors = new THREE.Color( R, G, B );
-				var material = new THREE.MeshLambertMaterial( { color: colors } );
+				var material = new THREE.MeshPhongMaterial( { color: colors } );
 				var cube = new THREE.Mesh( geometry, material );
 				cube.position.x += 12*j;
 				if(dense1 == 1)
@@ -487,15 +487,15 @@
 					// Second conv.
 					else if (selectedObject.number >= 5104 && selectedObject.number <= 5615)
 					{
-						for (var i = 0; i <= 1; i++)
+						for (var i = -2; i <= 2; i++)
 						{
-							for (var j = 0; j <= 1; j++)
+							for (var j = -2; j <= 2; j++)
 							{
-								var col = Math.floor((( selectedObject.number - 4240 ) % 144 ) / 12);
-								var row = (( selectedObject.number - 4240 ) % 144 ) % 12;
+								var col = Math.floor((( selectedObject.number - 5104 ) % 64 ) / 8);
+								var row = (( selectedObject.number - 5104 ) % 64 ) % 8;
 
 								lines.push( draw( cubeArray[ selectedObject.number ].position,
-								                  cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position ) );
+								                  cubeArray[ col * 12 + 4986 + row + i + 12*j].position ) );
 							}
 						}
 					}
