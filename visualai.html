@@ -26,7 +26,6 @@
 		var mouse = new THREE.Vector3();                    		// For the raycaster
 		var selectedObject = null, group;                   		// For the raycaster
 		var panDistance = 200;										// Determines how face the camera pans
-		var imgcolor = [];										
 		var kernelShape = model.layers[0].getWeights()[0].shape[0];
 		var filterSize = model.layers[0].getWeights()[0].shape[3];
 		var currentNode = 0, x = 0;
@@ -99,8 +98,7 @@
 							}
 
 								var color = new THREE.Color( R, G, B );
-								layerColors.push(color);
-								// layerColors.push( [R, G, B] );
+								allColors.push(color);
 						}
 					}
 				}
@@ -124,12 +122,9 @@
 					}
 
 					var color = new THREE.Color( R, G, B );
-					layerColors.push(color);
-					// layerColors.push( [R, G, B] );
+					allColors.push(color);
 				}
 			}
-
-			return layerColors;
 		}
 
 		// 1D array, channels, width, height
@@ -183,21 +178,21 @@
 									B = 0.3;
 									G = 0.3;
 								}
-								else
-								{
-									if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
-									{
-										R = 0;
-										B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-										G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-									}
-									else
-									{
-										B = 0;
-										R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
-										G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-									}
-								}
+								// else
+								// {
+								// 	if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
+								// 	{
+								// 		R = 0;
+								// 		B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								// 		G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								// 	}
+								// 	else
+								// 	{
+								// 		B = 0;
+								// 		R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
+								// 		G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								// 	}
+								// }
 							}
 
 							var colors = new THREE.Color( R, G, B );
@@ -237,21 +232,21 @@
 					B = 0.3;
 					G = 0.3;
 				}
-				else
-				{
-					if(layer[j+layer.length/2] <= .5)
-					{
-						R = 0;
-						B = 1 - 2*layer[j+layer.length/2];
-						G = 2*layer[j+layer.length/2];
-					}
-					else
-					{
-						B = 0;
-						R = 2*layer[j+layer.length/2] - 1;
-						G = 2 - 2*layer[j+layer.length/2];
-					}
-				}
+				// else
+				// {
+				// 	if(layer[j+layer.length/2] <= .5)
+				// 	{
+				// 		R = 0;
+				// 		B = 1 - 2*layer[j+layer.length/2];
+				// 		G = 2*layer[j+layer.length/2];
+				// 	}
+				// 	else
+				// 	{
+				// 		B = 0;
+				// 		R = 2*layer[j+layer.length/2] - 1;
+				// 		G = 2 - 2*layer[j+layer.length/2];
+				// 	}
+				// }
 
 				var colors = new THREE.Color( R, G, B );
 				var material = new THREE.MeshBasicMaterial( { color: colors } );
@@ -348,6 +343,11 @@
 
 			console.log(layerSize);
 
+			for(let l = 0; l < IMAGE_SIZE; l++)
+			{
+				allColors.push(group.children[l].material.color);
+			}
+
 			// Wait to finish training for good outputs
 			setTimeout(function()
 			{	
@@ -365,12 +365,10 @@
 						if(i < layerSize.length - 2)
 						{
 							tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
-							layerColors = findRGB(tensorOut, false);
+							findRGB(tensorOut, false);
 						}
 						else
-							layerColors = findRGB(currOut, true);
-
-						allColors.push(layerColors);
+							findRGB(currOut, true);
 					}
 					currOut = null;
 					layerColors = null;
@@ -379,22 +377,7 @@
 				netout = null;
 
 				console.log(allColors);
-
-				// var x = IMAGE_SIZE;
-				// for (let i = 0; i < allColors.length; i++)
-				// {	
-				// 	for (let j = 0; j < allColors[i].length; j++)
-				// 	{
-				// 		group.children[x].material.color = allColors[i][j];
-				// 		x += 1;
-				// 	}
-				// }
-			}, 30000);
-
-			for(let l = 0; l < IMAGE_SIZE; l++)
-			{
-				imgcolor.push(group.children[l].material.color);
-			}
+			}, 35000);
 		
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
@@ -467,14 +450,25 @@
 			{	
 				// Recolors original color after highlighting with kernel and ops
 				setTimeout(function()
-				{
+				{	
+					y = 0;
 					for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
 					{	
+						r = 0;
 						for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
 						{	
 							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-								group.children[z*28+s].material.color = imgcolor[z*28+s];
+								group.children[z*28+s].material.color = allColors[z*28+s];
+
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+							{
+								for(let v = 1; v <= filterSize; v++)
+									group.children[z*28+s+IMAGE_SIZE*v].material.color = allColors[z*28+s+IMAGE_SIZE*v];
+							}
+
+							r += 1;
 						}
+						y += 1;
 					}
 					currentNode += 1;
 				}, 10);
@@ -545,15 +539,8 @@
 
 			if( isFinished )
 			{
-				var x = IMAGE_SIZE;
 				for (let i = 0; i < allColors.length; i++)
-				{	
-					for (let j = 0; j < allColors[i].length; j++)
-					{
-						group.children[x].material.color = allColors[i][j];
-						x += 1;
-					}
-				}
+					group.children[i].material.color = allColors[i];
 			}
 		
 			controls.update();
