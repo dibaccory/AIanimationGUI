@@ -321,7 +321,7 @@
 			
 			// Layer visualizations
 			// input layer
-			var input = data.datasetImages.slice(IMAGE_SIZE*2, IMAGE_SIZE*3);
+			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
 			var img = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(img, scene, group, 0);
 			scene = stuffz.scene;
@@ -338,7 +338,7 @@
 				var stuffz = imgVis(fmap, scene, group, i+1);
 				scene = stuffz.scene;
 				group = stuffz.group;
-				console.log(fmap);
+				// console.log(fmap);
 				layerSize.push(output.dataSync().length);
 			}
 
@@ -351,7 +351,7 @@
 			scene = stuffz.scene;
 			group = stuffz.group;
 			dense1 = 0;
-			console.log(output.dataSync());
+			// console.log(output.dataSync());
 			layerSize.push(output.dataSync().length);
 
 
@@ -360,7 +360,7 @@
 			var stuffz = denseVis(output.dataSync(), scene, group, 6);
 			scene = stuffz.scene;
 			group = stuffz.group;
-			console.log(output.dataSync());
+			// console.log(output.dataSync());
 			layerSize.push(output.dataSync().length);
 		
 			for(let l = 0; l < IMAGE_SIZE; l++)
@@ -397,7 +397,7 @@
 				netout = null;
 
 				console.log(allColors);
-			}, 10000);
+			}, 20000);
 
 			var loader = new THREE.FontLoader();
 
@@ -588,7 +588,7 @@
 		function getLinesForCube(cube)
 		{
 		    let index = whichLayer(cube.number);
-		    console.log(cube.number);
+		    // console.log(cube.number);
 
 			cube.lines = [];
 			let i,j,k;
@@ -950,6 +950,7 @@
 				// convAnimate();
 				if(cubeToAnimate < cubeArray.length) {
                     drawLines(cubeToAnimate);
+                    cubeArray[cubeToAnimate].material.color = allColors[cubeToAnimate];
 
                     cubeToAnimate++;
                 }
@@ -975,10 +976,12 @@
 		
 		function play() {
 			isPlaying = true;
+			plzRestart = false;
 		}
 		
 		function pause() {
 			isPlaying = false;
+			plzRestart = false;
 		}
 		
 		function restart() {
