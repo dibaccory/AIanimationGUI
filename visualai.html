@@ -430,7 +430,6 @@
 							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
 
 							line = draw(group.children[z*28+s].position, group.children[currentNode+IMAGE_SIZE].position);
-							// lineGroup.add(line);
 						}
 
 						// color center of kernel
@@ -439,7 +438,6 @@
 							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
 
 							line = draw(group.children[z*28+s].position, group.children[z*28+s+IMAGE_SIZE].position);
-							// lineGroup.add(line);
 
 							for(let v = 1; v <= filterSize; v++)
 								group.children[z*28+s+IMAGE_SIZE*v].material.color = new THREE.Color ( 1, 0, 0 );
@@ -471,7 +469,6 @@
 
 							scene.remove(lineGroup.children[0]);
 							lineGroup.remove(lineGroup.children[0]);
-							console.log(lineGroup.children);
 							r += 1;
 						}
 						y += 1;
