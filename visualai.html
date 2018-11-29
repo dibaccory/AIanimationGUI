@@ -717,9 +717,9 @@
 			if ( selectedObject ) {
 
 				if (waitOver)
-					selectedObject.material.color.set( allColors[selectedObject.number] );
+					selectedObject.material.color = allColors[selectedObject.number];
 				else
-					selectedObject.material.color.set( selectedObject.original );
+					selectedObject.material.color = selectedObject.original;
 
 				selectedObject = null;
 
@@ -738,7 +738,7 @@
 				} )[ 0 ];
                 if ( res && res.object ) {
                     selectedObject = res.object;
-                    selectedObject.material.color.set(HIGHLIGHT_COLOR);
+                    res.object.material.color = HIGHLIGHT_COLOR;
 
 
                     if(selectedObject.number > 783){
@@ -884,18 +884,30 @@
 		    let layer = whichLayer(i);
 		    let v = layerVolume(layer);
 
-			for(let line = 0; line < cubeArray[i].lines.length; line++)
-			{
+			// for(let line = 0; line < cubeArray[i].lines.length; line++)
+			// {
 			    if(v && layer !=2)
 				{
                 	for(let depth = 0; depth < v.z; depth++)
-                    	drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
+                	{
+                		for(let line = 0; line < cubeArray[i].lines.length; line++)
+						{
+                    		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
+                    	}
+                    	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
+                	}
                 }
 			    else
-                    drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
+			    {
+			    	for(let line = 0; line < cubeArray[i].lines.length; line++)
+					{
+                    	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
+                    }
+                    cubeArray[i].material.color = allColors[i];
+			    }
 
-            }
-            if(layer < 4) {
+            // }
+            if(layer < 4 && layer != 2) {
                 if((i - volume[layer] < v.x * v.y))
 				{
 				    cubeToAnimate++;
@@ -1004,7 +1016,7 @@
 				// convAnimate();
 				if(cubeToAnimate < cubeArray.length) {
                     animateLines(cubeToAnimate);
-                    cubeArray[cubeToAnimate].material.color = allColors[cubeToAnimate];
+                    // cubeArray[cubeToAnimate].material.color = allColors[cubeToAnimate];
                     
                 }
 			}
