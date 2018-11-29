@@ -38,12 +38,12 @@
 		{
 
 			// wait for training to finish
-			setTimeout(function()
-			{
+			// setTimeout(function()
+			// {
 				init();
 				animate();
 				// console.log(model);
-			}, 17000);
+			// }, 17000);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -260,7 +260,14 @@
 			group = stuffz.group;
 			// console.log(output.dataSync());
 
-			var m = 0;
+			var m = 0, y = 0, r = 0, x = 0;
+			var oricolor = [];
+
+			for(let q = 0; q < IMAGE_SIZE; q++)
+			{
+				oricolor.push(group.children[q].material.color);
+			}
+			console.log(oricolor);
 			// Kernel animation
 			setTimeout(function()
 			{
@@ -268,18 +275,43 @@
 				{
 					setTimeout(function()
 					{
+						y = 0;
 						// range of z changing when it shouldn't?
 						for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
-						{
+						{	
+							r = 0;
 							for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
 							{	
 								if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+								{
+									// oricolor.push(group.children[z*28+s].material.color);
 									group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
+								}
+								// color center of kernel
+								if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+									group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
+
+								r += 1;
 							}
+							y += 1;
 						}
-						if(q % 28 == 0)
-							m += 1;
-					}, q*200);
+					}, q*50);
+
+					setTimeout(function()
+					{
+						setTimeout(function()
+						{	
+							console.log(oricolor);
+							for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
+							{	
+								for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
+								{	
+									if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+										group.children[z*28+s].material.color = oricolor[z*28+s];
+								}
+							}
+						}, q*50);
+					}, 19);
 				}
 			}, 1000);
 			// group.children[0].material.color = new THREE.Color ( 0, 0, 1 );
