@@ -15,6 +15,9 @@
 	<script src="lib/Layer.js"></script>
 	<script src="lib/Network.js"></script>
 	<script type= "module">
+		// Grabs model data from other js module
+		import {data, model} from './lib/model.js';
+		
 		// GLOBAL VARIABLES
 		var container; 		                                // Will be used to add the .js script to the browser
 		var camera, raycaster, renderer, scene;             // Three.js essentials
@@ -24,7 +27,7 @@
 		var selectedObject = null, group;                   // For the raycaster
 		var panDistance = 200;								// Determines how face the camera pans
 		var oricolor = [];
-		var q = 0, x = 0;
+		var currentNode = 0, x = 0;
 
 		// CONSTANTS
 		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
@@ -32,21 +35,11 @@
 		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1, LAYER_DELAY;
 		var IMAGE_SIZE = 784;
 
-
-		// Grabs model data from other js module
-		import {data, model} from './lib/model.js';
-
 		// The first function that loads
 		window.onload = function() 
 		{
-
-			// wait for training to finish
-			// setTimeout(function()
-			// {
 				init();
 				animate();
-				// console.log(model);
-			// }, 17000);
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -267,62 +260,6 @@
 			{
 				oricolor.push(group.children[l].material.color);
 			}
-			// console.log(oricolor);
-
-			// var m = 0, y = 0, r = 0, x = 0;
-			// // Kernel animation
-			// setTimeout(function()
-			// {
-			// 	for(let q = 0; q < IMAGE_SIZE; q++)
-			// 	{
-			// 		setTimeout(function()
-			// 		{
-			// 			y = 0;
-			// 			// range of z changing when it shouldn't?
-			// 			for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
-			// 			{	
-			// 				r = 0;
-			// 				for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
-			// 				{	
-			// 					if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-			// 					{
-			// 						// oricolor.push(group.children[z*28+s].material.color);
-			// 						group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
-			// 					}
-			// 					// color center of kernel
-			// 					if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
-			// 						group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
-
-			// 					r += 1;
-			// 				}
-			// 				y += 1;
-			// 			}
-			// 		}, q*50);
-
-			// 		setTimeout(function()
-			// 		{
-			// 			setTimeout(function()
-			// 			{	
-			// 				console.log(oricolor);
-			// 				for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
-			// 				{	
-			// 					for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
-			// 					{	
-			// 						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-			// 							group.children[z*28+s].material.color = oricolor[z*28+s];
-			// 					}
-			// 				}
-			// 			}, q*50);
-			// 		}, 30);
-			// 	}
-			// }, 1000);
-
-
-			// group.children[0].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[27].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[28].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[29].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[56].material.color = new THREE.Color ( 0, 0, 1 );
 		
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
@@ -391,54 +328,48 @@
 		{
 			var y = 0, r = 0;
 
-			if (q < IMAGE_SIZE)
-			{
+			if (currentNode < IMAGE_SIZE)
+			{	
+				// Recolors original color after highlighting with kernel and ops
 				setTimeout(function()
 				{
 					for(let z = -Math.floor(5/2); z < Math.floor(5/2)+1; z++)
 					{	
-						for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
+						for(let s = currentNode-Math.floor(5/2); s < currentNode+Math.floor(5/2)+1; s++)
 						{	
 							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
 								group.children[z*28+s].material.color = oricolor[z*28+s];
 						}
 					}
-					q += 1;
+					currentNode += 1;
 				}, 10);
 
-				// setTimeout(function()
-				// {
-					y = 0;
-					// range of z changing when it shouldn't?
-					for(let z = -Math.floor(5/2); z < Math.floor(5/2)+1; z++)
+				// kernel highlight of current computation
+				y = 0;
+				for(let z = -Math.floor(5/2); z < Math.floor(5/2)+1; z++)
+				{	
+					r = 0;
+					for(let s = currentNode-Math.floor(5/2); s < currentNode+Math.floor(5/2)+1; s++)
 					{	
-						r = 0;
-						for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
-						{	
-							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-							{
-								// oricolor.push(group.children[z*28+s].material.color);
-								group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
-							}
-							// color center of kernel
-							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
-								group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
-
-							r += 1;
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+						{
+							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
 						}
-						y += 1;
-					}
-				// }, 10);
+						// color center of kernel
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
 
+						r += 1;
+					}
+					y += 1;
+				}
 			}
 		}
 		
 		function animate() 
 		{
-		
 			requestAnimationFrame( animate );
 			render();
-		
 		}
 		
 		function render() 
@@ -461,12 +392,14 @@
 					scene.position.z  += PANSPEED;
 				}
 
+				// show network computation
 				convAnimate();
 			}
 
+			// means restart
 			if(!isPlaying && THETA == 0)
 			{
-				q = 0;
+				currentNode = 0;
 			}
 		
 			controls.update();
