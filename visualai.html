@@ -19,19 +19,29 @@
 		var container; 		                                  // Will be used to add the .js script to the browser
 		var camera, raycaster, renderer, scene;             // Three.js essentials
 		var controls;                                       // For orbital controls
-		var isPlaying = true;                               // For the play/pause button
 		var mouse = new THREE.Vector3();                    // For the raycaster
 		var selectedObject = null, group;                   // For the raycaster
 		var theta = 0;                                      // Camera rotating during animation
 		var lines = [];
 		var cubeArray = [];
 		var numbox = 0;
+		var allColors = [];
+		var kernelShape = model.layers[0].getWeights()[0].shape[0];
+		var filterSize = model.layers[0].getWeights()[0].shape[3];
+		var currentNode = 0, x = 0;
+		var layerSize = [];
+		var allColors = [];
+		var lineGroup;
+
+		// Button stuff
+		var isFinished = false, plzRestart = false, isPlaying = true;
 
 		// CONSTANTS
 		const RADIUS = 750;                                   // Camera rotation and movement
 		const HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
 		const PANSPEED = 5, ROTATIONSPEED = 1;
 		const PANDISTANCE = 0;	                            // Determines how far the camera pans
+		const IMAGE_SIZE = 784;
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
@@ -54,7 +64,65 @@
 			geo.vertices.push( p2 );
 			var line = new THREE.Line( geo, mat );
 			scene.add( line );
+			// lineGroup.add(line);
+
 			return line;
+		}
+
+		function findRGB( layer, dense )
+		{
+			var layerColors = [];
+			var R, B, G;
+
+			if(!dense)
+			{
+				for(let t = 0; t < layer[0][0][0].length; t++)
+				{
+					for(let i = -layer[0][0].length/2; i < layer[0][0].length/2; i++)
+					{
+						for(let j = -layer[0].length/2; j < layer[0].length/2; j++)
+						{
+							if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
+							{
+								R = 0;
+								B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+							}
+							else
+							{
+								B = 0;
+								R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
+								G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+							}
+
+								var color = new THREE.Color( R, G, B );
+								allColors.push(color);
+						}
+					}
+				}
+			}
+
+			if(dense)
+			{
+				for(let i = 0; i < layer.length; i++)
+				{
+					if(layer[i] <= .5)
+					{
+						R = 0;
+						B = 1 - 2*layer[i];
+						G = 2*layer[i];
+					}
+					else
+					{
+						B = 0;
+						R = 2*layer[i];
+						G = 2 - 2*layer[i];
+					}
+
+					var color = new THREE.Color( R, G, B );
+					allColors.push(color);
+				}
+			}
 		}
 
 		// 1D array, channels, width, height
@@ -219,7 +287,9 @@
 			// A Raycaster can tell what object is the mouse hovering over
 			raycaster = new THREE.Raycaster();
 			group = new THREE.Group();
+			lineGroup = new THREE.Group();
 			scene.add( group );
+			scene.add( lineGroup );
 			
 			// Layer visualizations
 			// input layer
@@ -282,7 +352,7 @@
 
     		} );
 
-		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 		    var mesh = new THREE.Mesh( textGeo, textMaterial );
 		    mesh.position.set( 120, 150, -150 );
@@ -306,7 +376,7 @@
 
     		} );
 
-		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 		    var mesh = new THREE.Mesh( textGeo, textMaterial );
 		    mesh.position.set( 50, 75, -400 );
@@ -330,10 +400,10 @@
 
     		} );
 
-		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 		    var mesh = new THREE.Mesh( textGeo, textMaterial );
-		    mesh.position.set( 40, 50, -600 );
+		    mesh.position.set( 40, 50, -610 );
 		    mesh.rotateY(Math.PI / 2)
 		    scene.add( mesh );
 			} );
@@ -354,7 +424,7 @@
 
     		} );
 
-		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 		    var mesh = new THREE.Mesh( textGeo, textMaterial );
 		    mesh.position.set( 20, 30, -840 );
@@ -378,7 +448,7 @@
 
     		} );
 
-		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 		    var mesh = new THREE.Mesh( textGeo, textMaterial );
 		    mesh.position.set( 10, 30, -1030 );
@@ -402,7 +472,7 @@
 
     		} );
 
-		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 		    var mesh = new THREE.Mesh( textGeo, textMaterial );
 		    mesh.position.set( 10, 30, -1125 );
@@ -487,15 +557,18 @@
 					// Second conv.
 					else if (selectedObject.number >= 5104 && selectedObject.number <= 5615)
 					{
-						for (var i = -2; i <= 2; i++)
+						for (var k = 0; k < 6; k++)
 						{
-							for (var j = -2; j <= 2; j++)
+							for (var i = -2; i <= 2; i++)
 							{
-								var col = Math.floor((( selectedObject.number - 5104 ) % 64 ) / 8);
-								var row = (( selectedObject.number - 5104 ) % 64 ) % 8;
+								for (var j = -2; j <= 2; j++)
+								{
+									var col = Math.floor((( selectedObject.number - 5104 ) % 64 ) / 8);
+									var row = (( selectedObject.number - 5104 ) % 64 ) % 8;
 
-								lines.push( draw( cubeArray[ selectedObject.number ].position,
-								                  cubeArray[ col * 12 + 4986 + row + i + 12*j].position ) );
+									lines.push( draw( cubeArray[ selectedObject.number ].position,
+									                  cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j].position ) );
+								}
 							}
 						}
 					}
@@ -552,6 +625,74 @@
 			render();
 		
 		}
+
+		function convAnimate()
+		{
+			var y = 0, r = 0;
+			var line;
+
+			if (currentNode < IMAGE_SIZE)
+			{	
+
+				// kernel highlight of current computation
+				y = 0;
+				for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
+				{	
+					r = 0;
+					for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
+					{	
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+						{
+							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
+
+							// line = draw(group.children[z*28+s].position, group.children[currentNode+IMAGE_SIZE].position);
+						}
+
+						// color center of kernel
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+						{
+							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
+
+							line = draw(group.children[z*28+s].position, group.children[z*28+s+IMAGE_SIZE].position);
+
+							for(let v = 1; v <= filterSize; v++)
+								group.children[z*28+s+IMAGE_SIZE*v].material.color = new THREE.Color ( 1, 0, 0 );
+						}
+
+
+						r += 1;
+					}
+					y += 1;
+				}
+
+				// Recolors original color after highlighting with kernel and ops
+				setTimeout(function()
+				{	
+					y = 0;
+					for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
+					{	
+						r = 0;
+						for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
+						{	
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+								group.children[z*28+s].material.color = allColors[z*28+s];
+
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+							{
+								for(let v = 1; v <= filterSize; v++)
+									group.children[z*28+s+IMAGE_SIZE*v].material.color = allColors[z*28+s+IMAGE_SIZE*v];
+							}
+
+							scene.remove(lineGroup.children[0]);
+							lineGroup.remove(lineGroup.children[0]);
+							r += 1;
+						}
+						y += 1;
+					}
+					currentNode += 1;
+				}, 10);
+			}
+		}
 		
 		function render() {
 
@@ -570,9 +711,24 @@
 				//  	scene.position.z  += PANSPEED;
 
 				// }
+
+				// convAnimate();
+			}
+
+			// restart
+			if( plzRestart )
+			{
+				currentNode = 0;
+				for(let i = IMAGE_SIZE; i < group.children.length; i++)
+					group.children[i].material.color = new THREE.Color ( 0.3, 0.3, 0.3 );
+			}
+
+			if( isFinished )
+			{
+				for (let i = 0; i < allColors.length; i++)
+					group.children[i].material.color = allColors[i];
 			}
 		
-			camera.lookAt( scene.position );
 			controls.update();
 			renderer.render( scene, camera );
 		}
@@ -595,6 +751,17 @@
 		
 		}
 
+		function finish() 
+		{
+			isFinished = true;
+			plzRestart = false;
+		}
+
+		window.play = play;
+		window.pause = pause;
+		window.restart = restart;
+		window.finish = finish;
+
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
@@ -602,6 +769,7 @@
 		<button onclick="play();">Play</button>
 		<button onclick="pause();">Pause</button>
 		<button onclick="restart();">Restart</button>
+		<button onclick="finish();">Finish</button>
 
 	</div>
 	</body>
