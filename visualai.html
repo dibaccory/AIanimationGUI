@@ -14,21 +14,24 @@
 	<script type= "module" src="lib/model.js"></script>
 	<script src="lib/Layer.js"></script>
 	<script src="lib/Network.js"></script>
-	<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script> -->
 	<script type= "module">
 		// GLOBAL VARIABLES
 		var container; 		                                  // Will be used to add the .js script to the browser
 		var camera, raycaster, renderer, scene;             // Three.js essentials
 		var controls;                                       // For orbital controls
-		var isPlaying = false, isDrawing = false;           // For the play/pause button
+		var isPlaying = true;                               // For the play/pause button
 		var mouse = new THREE.Vector3();                    // For the raycaster
 		var selectedObject = null, group;                   // For the raycaster
-		var panDistance = 200;										          // Determines how face the camera pans
+		var theta = 0;                                      // Camera rotating during animation
+		var lines = [];
+		var cubeArray = [];
+		var numbox = 0;
 
 		// CONSTANTS
-		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
-		var HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
-		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1, LAYER_DELAY;
+		const RADIUS = 750;                                   // Camera rotation and movement
+		const HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
+		const PANSPEED = 5, ROTATIONSPEED = 1;
+		const PANDISTANCE = 1200;	                            // Determines how far the camera pans
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
@@ -44,28 +47,19 @@
 		}
 
 		// Draws a line that connects the point p1 to point p2
-		function draw(p1, p2) {
-			var mat = new THREE.LineBasicMaterial({color:0x888888});
+		function draw( p1, p2 ) {
+			var mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
 			var geo = new THREE.Geometry();
-			geo.vertices.push( new THREE.Vertex(p1) );
-			geo.vertices.push( new THREE.Vertex(p2) );
-			var line = new THREE.Line(geo);
-			scene.add(line);
-			return line
-		}
-		
-		function createLayer( mnistNetwork ) {
-			for (var layer; layer < mnistNetwork.length; layer++ ) {	
-				v3loop( mnistNetwork[layer].volume, ( i, j, k ) => {
-					scene.add( mnistNetwork[layer].nodes[k][j][i] );
-				});
-			}
+			geo.vertices.push( p1 );
+			geo.vertices.push( p2 );
+			var line = new THREE.Line( geo, mat );
+			scene.add( line );
+			return line;
 		}
 
 		// 1D array, channels, width, height
 		// outputs js array in original shape
-		function oneDToMany(layer, n, m , l)
-		{
+		function oneDToMany( layer, n, m , l ) {
 			var arr =  Array.prototype.slice.call(layer);
 			var newArr = [];
 			var newArr2 = [];
@@ -122,7 +116,7 @@
 							}
 
 							var colors = new THREE.Color( R, G, B );
-							var material = new THREE.MeshBasicMaterial( { color: colors } );
+							var material = new THREE.MeshLambertMaterial( { color: colors } );
 							var cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
 							cube.position.y += 12*j;
@@ -135,8 +129,12 @@
 								cube.position.z += t*-25 + (-200*num);
 							}
 							cube.original = colors;
+							cube.number = numbox++;
+
 							scene.add( cube );
 							group.add( cube );
+							cubeArray.push( cube);
+
 					}
 				}
 			}
@@ -166,7 +164,7 @@
 				}
 
 				var colors = new THREE.Color( R, G, B );
-				var material = new THREE.MeshBasicMaterial( { color: colors } );
+				var material = new THREE.MeshLambertMaterial( { color: colors } );
 				var cube = new THREE.Mesh( geometry, material );
 				cube.position.x += 12*j;
 				if(dense1 == 1)
@@ -178,8 +176,12 @@
 					cube.position.z += (-200*(num-1)) - 150;
 				}
 				cube.original = colors;
+				cube.number = numbox++;
+
 				scene.add( cube );
 				group.add( cube );
+				cubeArray.push( cube);
+
 			}
 
 			return {scene: scene, group: group};
@@ -202,7 +204,7 @@
 		
 			// Camera stuff
 			var aspect = window.innerWidth / window.innerHeight;
-			camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 3000 );
+			camera = new THREE.PerspectiveCamera( 45, aspect, 1, 5000 );
 			camera.position.set( 0, 0, RADIUS );
 			camera.lookAt( scene.position );
 			scene.add( camera );
@@ -216,10 +218,6 @@
 			group = new THREE.Group();
 			scene.add( group );
 			
-			// setTimeout(function()
-			// {
-			    //do what you need here
-
 			// Layer visualizations
 			// input layer
 			var input = data.datasetImages.slice(784, 1568);
@@ -243,6 +241,7 @@
 
 			// flatten layer
 			var output = model.getLayer('', 4).apply(output);
+
 			// 1st dense layer
 			var output = model.getLayer('', 5).apply(output);
 			var stuffz = denseVis(output.dataSync(), scene, group, 5);
@@ -261,17 +260,113 @@
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
 			controls.dampingFactor = 0.25;
-			controls.screenSpacePanning = false;
-			controls.maxPolarAngle = Math.PI / 2;
+
+			var loader = new THREE.FontLoader();
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "First Convolution", {
+
+        font: font,
+
+        size: 25,
+        height: 10,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000 } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 160, 150, -150 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "Max Pool", {
+
+        font: font,
+
+        size: 25,
+        height: 10,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000 } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 75, 100, -400 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
 		
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "2nd Convolution", {
+
+        font: font,
+
+        size: 15,
+        height: 10,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000 } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 50, 50, -600 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "Max Pool", {
+
+        font: font,
+
+        size: 15,
+        height: 10,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000 } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 0, 30, -840 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
 			// Makes the animation adapt to the size of the window
 			window.addEventListener( "resize", resize, false );
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
-
-			// }, 6000);
 		}
+
+
 		
 		// The program adapts to the size of the browser window
 		function resize() {
@@ -291,6 +386,9 @@
 			if ( selectedObject ) {
 				selectedObject.material.color.set( selectedObject.original );
 				selectedObject = null;
+
+				for (var i = 0; i < lines.length; i++)
+					scene.remove( lines[i] );
 			}
 		
 			var intersects = getIntersects( event.layerX, event.layerY );
@@ -303,6 +401,86 @@
 				if ( res && res.object ) {
 					selectedObject = res.object;
 					selectedObject.material.color.set( HIGHLIGHT_COLOR );
+					console.log(selectedObject.number);
+
+					// First Conv
+					if (selectedObject.number >= 784 && selectedObject.number <= 4239)
+					{
+						for (var i = -2; i <= 2; i++)
+						{
+							for (var j = -2; j <= 2; j++)
+							{
+								var col = Math.floor((( selectedObject.number - 784 ) % 576 ) / 24);
+								var row = (( selectedObject.number - 784 ) % 576 ) % 24;
+
+								lines.push( draw( cubeArray[ selectedObject.number ].position,
+								                  cubeArray[ col * 28 + 58 + row + i + 28*j].position ) );
+							}
+						}
+					}
+					// First max pooling
+					else if (selectedObject.number >= 4240 && selectedObject.number <= 5103)
+					{
+						for (var i = 0; i <= 1; i++)
+						{
+							for (var j = 0; j <= 1; j++)
+							{
+								var col = Math.floor((( selectedObject.number - 4240 ) % 144 ) / 12);
+								var row = (( selectedObject.number - 4240 ) % 144 ) % 12;
+
+								lines.push( draw( cubeArray[ selectedObject.number ].position,
+								                  cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position ) );
+							}
+						}
+					}
+					// Second conv.
+					else if (selectedObject.number >= 5104 && selectedObject.number <= 5615)
+					{
+						for (var i = 0; i <= 1; i++)
+						{
+							for (var j = 0; j <= 1; j++)
+							{
+								var col = Math.floor((( selectedObject.number - 4240 ) % 144 ) / 12);
+								var row = (( selectedObject.number - 4240 ) % 144 ) % 12;
+
+								lines.push( draw( cubeArray[ selectedObject.number ].position,
+								                  cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position ) );
+							}
+						}
+					}
+					// second max pooling
+					else if (selectedObject.number >= 5616 && selectedObject.number <= 5743)
+					{
+						for (var i = 0; i <= 1; i++)
+						{
+							for (var j = 0; j <= 1; j++)
+							{
+								var col = Math.floor((( selectedObject.number - 5616 ) % 16 ) / 4);
+								var row = (( selectedObject.number - 5616 ) % 16 ) % 4;
+
+								lines.push( draw( cubeArray[ selectedObject.number ].position,
+								                  cubeArray[ 5552 + 8 * col*2 + i + 8 * j + row*2].position ) );
+							}
+						}
+					}
+					// Dense layer
+					else if (selectedObject.number >= 5744 && selectedObject.number <= 5793)
+					{
+						for (var j = 5616; j <= 5743; j++)
+						{
+							lines.push( draw( cubeArray[ selectedObject.number ].position,
+							                  cubeArray[ j ].position ) );
+						}
+					}
+					// Output
+					else if (selectedObject.number >= 5794 && selectedObject.number <= 5803)
+					{
+						for (var j = 5744; j <= 5793; j++)
+						{
+							lines.push( draw( cubeArray[ selectedObject.number ].position,
+							                  cubeArray[ j ].position ) );
+						}
+					}
 				}
 			}
 		}
@@ -325,25 +503,25 @@
 		}
 		
 		function render() {
-		
+
 			// Outer if statement is to check whether it's in play or pause mode
 			// Inner if statement is to rotate and pan camera around layers
 			if ( isPlaying ) {
-				if ( THETA < 90 ) {
+				if ( theta < 90 ) {
 		
-					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( THETA ) );
-					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
-					camera.lookAt( scene.position );
-					THETA += ROTATIONSPEED;
+					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( theta ) );
+					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( theta ) );
+					theta += ROTATIONSPEED;
+				}
+				else if ( camera.position.z < PANDISTANCE ) {
 		
-				} else if ( scene.position.z < panDistance ) {
-		
-					camera.position.z -= PANSPEED;
-					scene.position.z  += PANSPEED;
-		
+				 	camera.position.z -= PANSPEED;
+				 	scene.position.z  += PANSPEED;
+
 				}
 			}
 		
+			camera.lookAt( scene.position );
 			controls.update();
 			renderer.render( scene, camera );
 		}
@@ -359,12 +537,13 @@
 		function restart() {
 		
 			isPlaying = false;
-			THETA = 0;
+			theta = 0;
 			scene.position.set( 0, 0, 0 );
 			camera.position.set( 0, 0, RADIUS );
 			camera.lookAt( scene.position );
 		
 		}
+
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
