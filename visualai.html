@@ -346,7 +346,7 @@
 				netout = null;
 
 				console.log(allColors);
-			}, 35000);
+			}, 40000);
 		
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.enableDamping = true;
@@ -429,7 +429,7 @@
 						{
 							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
 
-							line = draw(group.children[z*28+s].position, group.children[currentNode+IMAGE_SIZE].position);
+							// line = draw(group.children[z*28+s].position, group.children[currentNode+IMAGE_SIZE].position);
 						}
 
 						// color center of kernel
