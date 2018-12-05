@@ -19,58 +19,141 @@
 		var container; 		                                // Will be used to add the .js script to the browser
 		var camera, raycaster, renderer, scene;             // Three.js essentials
 		var controls;                                       // For orbital controls
-		var isPlaying = false, isDrawing = false;           // For the play/pause button
 		var mouse = new THREE.Vector3();                    // For the raycaster
 		var selectedObject = null, group;                   // For the raycaster
-		var panDistance = 200;								// Determines how face the camera pans
+		var theta = 0;                                      // Camera rotating during animation
+		var linesInScene = [];
+		var cubeArray = [];
+		var numbox = 0;
+		var kernelShape = model.layers[0].getWeights()[0].shape[0];
+		var filterSize = model.layers[0].getWeights()[0].shape[3];
+		var currentNode = 0, x = 0;
+		var layerSize = [];
+		var allColors = [];
+		var lineGroup;
+		var cubeToAnimate = 784;
+		var waitOver = false;
+		var IMG;
+		var imgNum = 5;
+
+		// Button stuff
+		var isFinished = false, plzRestart = false, isPlaying = false;
 
 		// CONSTANTS
-		var RADIUS = 300, THETA = 0;                        // Camera rotation and movement
-		var HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
-		var PANSPEED = 1, ROTATIONSPEED = 1, DRAWLINESPEED = 1, LAYER_DELAY;
-		var IMAGE_SIZE = 784;
+		const RADIUS = 750;                                   // Camera rotation and movement
+		const HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
+		const PANSPEED = 5, ROTATIONSPEED = 1;
+		const PANDISTANCE = 0;	                            // Determines how far the camera pans
+		const IMAGE_SIZE = 784;
+		const WAIT_TIME = 40000;
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
 
 		// The first function that loads
-		window.onload = function() 
-		{
+		window.onload = function() {
 
-			// wait for training to finish
-			setTimeout(function()
-			{
-				init();
-				animate();
-				// console.log(model);
-			}, 17000);
+			init();
+			animate();
+			// console.log(model);
 		}
 
 		// Draws a line that connects the point p1 to point p2
-		function draw(p1, p2) 
-		{
-			var mat = new THREE.LineBasicMaterial({color:0x888888});
+		function draw( p1, p2 ) {
+			var mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+	
 			var geo = new THREE.Geometry();
-			geo.vertices.push( new THREE.Vertex(p1) );
-			geo.vertices.push( new THREE.Vertex(p2) );
-			var line = new THREE.Line(geo);
-			scene.add(line);
-			return line
+			geo.vertices.push( p1 );
+			geo.vertices.push( p2 );
+			var line = new THREE.Line( geo, mat );
+			scene.add( line );
+			// lineGroup.add(line);
+
+			return line;
 		}
-		
-		function createLayer( mnistNetwork ) 
+
+        function drawLine( from, to ) {
+            var mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+            var geo = new THREE.Geometry();
+            geo.vertices.push( from );
+            geo.vertices.push( to );
+            var line = new THREE.Line( geo, mat );
+            linesInScene.push(line);
+            scene.add( line );
+            // lineGroup.add(line);
+
+            return line;
+        }
+
+		function findRGB( layer, dense )
 		{
-			for (var layer; layer < mnistNetwork.length; layer++ ) {	
-				v3loop( mnistNetwork[layer].volume, ( i, j, k ) => {
-					scene.add( mnistNetwork[layer].nodes[k][j][i] );
-				});
+			var layerColors = [];
+			var R, B, G;
+
+			if(!dense)
+			{
+				for(let t = 0; t < layer[0][0][0].length; t++)
+				{
+					for(let i = -layer[0][0].length/2; i < layer[0][0].length/2; i++)
+					{
+						for(let j = -layer[0].length/2; j < layer[0].length/2; j++)
+						{
+							if(ilayer == 1)
+							{
+								R = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								B = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								G = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+							}
+							else
+							{
+								if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
+								{
+									R = 0;
+									B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+									G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								}
+								else
+								{
+									B = 0;
+									R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
+									G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								}
+							}
+
+							var color = new THREE.Color( R, G, B );
+							allColors.push(color);
+						}
+					}
+				}
+			}
+
+			if(dense)
+			{
+				for(let i = 0; i < layer.length; i++)
+				{
+					if(layer[i] <= .5)
+					{
+						R = 0;
+						B = 1 - 2*layer[i];
+						G = 2*layer[i];
+					}
+					else
+					{
+						B = 0;
+						R = 2*layer[i];
+						G = 2 - 2*layer[i];
+					}
+
+					var color = new THREE.Color( R, G, B );
+					allColors.push(color);
+				}
+
 			}
 		}
 
 		// 1D array, channels, width, height
 		// outputs js array in original shape
-		function oneDToMany(layer, n, m , l)
-		{
+		function oneDToMany( layer, n, m , l ) {
 			var arr =  Array.prototype.slice.call(layer);
 			var newArr = [];
 			var newArr2 = [];
@@ -127,7 +210,7 @@
 							}
 
 							var colors = new THREE.Color( R, G, B );
-							var material = new THREE.MeshBasicMaterial( { color: colors } );
+							var material = new THREE.MeshPhongMaterial( { color: colors } );
 							var cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
 							cube.position.y += 12*(-j);
@@ -140,8 +223,18 @@
 								cube.position.z += t*-25 + (-200*num);
 							}
 							cube.original = colors;
+
+							cube.number = numbox++;
+                        	cubeArray.push( cube);
+                        	if(cube.number > 783)
+                        	{
+                            	getLinesForCube(cube);
+                        	}
+
 							scene.add( cube );
 							group.add( cube );
+
+
 					}
 				}
 			}
@@ -171,7 +264,7 @@
 				}
 
 				var colors = new THREE.Color( R, G, B );
-				var material = new THREE.MeshBasicMaterial( { color: colors } );
+				var material = new THREE.MeshPhongMaterial( { color: colors } );
 				var cube = new THREE.Mesh( geometry, material );
 				cube.position.x += 12*j;
 				if(dense1 == 1)
@@ -183,8 +276,14 @@
 					cube.position.z += (-200*(num-1)) - 150;
 				}
 				cube.original = colors;
+				cube.number = numbox++;
+				//console.log(cube.number);
+                cubeArray.push( cube);
+                getLinesForCube(cube);
+
 				scene.add( cube );
 				group.add( cube );
+
 			}
 
 			return {scene: scene, group: group};
@@ -202,37 +301,50 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.setPixelRatio( window.devicePixelRatio );
 			container.appendChild( renderer.domElement );
+
+
 		
 			// Setting the scene
 			scene = new THREE.Scene();
 		
 			// Camera stuff
 			var aspect = window.innerWidth / window.innerHeight;
-			camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 3000 );
+			camera = new THREE.PerspectiveCamera( 45, aspect, 1, 5000 );
 			camera.position.set( 0, 0, RADIUS );
 			camera.lookAt( scene.position );
 			scene.add( camera );
+
+            controls = new THREE.OrbitControls( camera, renderer.domElement );
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
 		
 			// Light stuff
-			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 1.0 );
+			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.5 );
 			scene.add( ambientLight );
+			var dirLight = new THREE.DirectionalLight( 0xffffff, 1.0 );
+			dirLight.position.set( 1, 0, 1 ).normalize();
+			scene.add( dirLight );
 		
 			// A Raycaster can tell what object is the mouse hovering over
 			raycaster = new THREE.Raycaster();
 			group = new THREE.Group();
+			lineGroup = new THREE.Group();
 			scene.add( group );
-
+			scene.add( lineGroup );
+			
 			// Layer visualizations
-			// input layer, select based off img size
+			// input layer
 			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
-			var img = oneDToMany(input, 1, 28, 28);
-			var stuffz = imgVis(img, scene, group, 0);
+			IMG = oneDToMany(input, 1, 28, 28);
+			var stuffz = imgVis(IMG, scene, group, 0);
+
 			scene = stuffz.scene;
 			group = stuffz.group;
 			ilayer = 0;
+			layerSize.push(IMAGE_SIZE);
 
 			// loop through conv and pool layers
-			var output = tf.tensor4d(img);
+			var output = tf.tensor4d(IMG);
 			for(let i = 0; i < 4; i++)
 			{
 				var output = model.getLayer('', i).apply(output);
@@ -241,10 +353,12 @@
 				scene = stuffz.scene;
 				group = stuffz.group;
 				// console.log(fmap);
+				layerSize.push(output.dataSync().length);
 			}
 
 			// flatten layer
 			var output = model.getLayer('', 4).apply(output);
+
 			// 1st dense layer
 			var output = model.getLayer('', 5).apply(output);
 			var stuffz = denseVis(output.dataSync(), scene, group, 5);
@@ -252,6 +366,7 @@
 			group = stuffz.group;
 			dense1 = 0;
 			// console.log(output.dataSync());
+			layerSize.push(output.dataSync().length);
 
 			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
@@ -259,47 +374,199 @@
 			scene = stuffz.scene;
 			group = stuffz.group;
 			// console.log(output.dataSync());
-
-			var m = 0;
-			// Kernel animation
-			setTimeout(function()
+			layerSize.push(output.dataSync().length);
+		
+			for(let l = 0; l < IMAGE_SIZE; l++)
 			{
-				for(let q = 0; q < IMAGE_SIZE; q++)
-				{
-					setTimeout(function()
+				allColors.push(cubeArray[l].material.color);
+			}
+
+			// Wait to finish training for good outputs
+			setTimeout(function()
+			{	
+				var netout = tf.tensor4d(IMG);
+
+				for (let i = 0; i < layerSize.length; i++)
+				{	
+					var currOut, layerColors, tensorOut;
+
+					netout = model.getLayer('', i).apply(netout);
+
+					if(i != 4)
 					{
-						// range of z changing when it shouldn't?
-						for(let z = m-Math.floor(5/2); z < m+Math.floor(5/2)+1; z++)
+						currOut = netout.dataSync();
+						if(i < layerSize.length - 2)
 						{
-							for(let s = q-Math.floor(5/2); s < q+Math.floor(5/2)+1; s++)
-							{	
-								if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-									group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
-							}
+							tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
+							findRGB(tensorOut, false);
 						}
-						if(q % 28 == 0)
-							m += 1;
-					}, q*200);
+						else
+							findRGB(currOut, true);
+					}
+					currOut = null;
+					layerColors = null;
+					tensorOut = null;
 				}
-			}, 1000);
-			// group.children[0].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[27].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[28].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[29].material.color = new THREE.Color ( 0, 0, 1 );
-			// group.children[56].material.color = new THREE.Color ( 0, 0, 1 );
+				netout = null;
+
+				console.log(allColors);
+				waitOver = true;
+			}, WAIT_TIME);
+
+			var loader = new THREE.FontLoader();
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "First Convolution", {
+
+        font: font,
+
+        size: 25,
+        height: 10,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 120, 150, -150 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "Max Pool", {
+
+        font: font,
+
+        size: 25,
+        height: 10,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 50, 75, -400 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
 		
-			controls = new THREE.OrbitControls( camera, renderer.domElement );
-			controls.enableDamping = true;
-			controls.dampingFactor = 0.25;
-			controls.screenSpacePanning = false;
-			controls.maxPolarAngle = Math.PI / 2;
-		
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "2nd Convolution", {
+
+        font: font,
+
+        size: 15,
+        height: 5,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 40, 50, -610 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "Max Pool", {
+
+        font: font,
+
+        size: 15,
+        height: 5,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 20, 30, -840 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "Dense", {
+
+        font: font,
+
+        size: 10,
+        height: 2,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 10, 30, -1030 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
+			loader.load( 'lib/helvetiker_regular.typeface.json', function ( font ) {
+
+    		var textGeo = new THREE.TextGeometry( "Output", {
+
+        font: font,
+
+        size: 10,
+        height: 2,
+        curveSegments: 12,
+
+        bevelThickness: 1,
+        bevelSize: 1,
+        bevelEnabled: true
+
+    		} );
+
+		    var textMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+
+		    var mesh = new THREE.Mesh( textGeo, textMaterial );
+		    mesh.position.set( 10, 30, -1125 );
+		    mesh.rotateY(Math.PI / 2)
+		    scene.add( mesh );
+			} );
+
 			// Makes the animation adapt to the size of the window
 			window.addEventListener( "resize", resize, false );
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
 		}
+
+
 		
 		// The program adapts to the size of the browser window
 		function resize() {
@@ -309,6 +576,150 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 		
 		}
+		//
+		// function getAllLines()
+		// {
+		//     lines[0] = [];
+		//     lines[1] = [];
+		//     lines[2] = [];
+		//     lines[3] = [];
+		//     lines[4] = [];
+		//     lines[5] = [];
+		//
+		//     for(let i = 784; i < cubeArray.length; i++)
+		// 	{
+		// 	    //get layer cube is in
+		// 		let layer = whichLayer(cubeArray[i]);
+		//
+        //         lines[layer][]
+		// 		//get array of lines for this cube
+		// 		let linesForCube = getLinesForCube(layer, cubeArray[i]);
+		// 		lines[layer][i].push(linesForCube);
+		//
+		// 	}
+		// }
+
+		function getLinesForCube(cube)
+		{
+		    let index = whichLayer(cube.number);
+		    // console.log(cube.number);
+
+			cube.lines = [];
+			let i,j,k;
+		    switch (index)
+			{
+				case 0:
+                    for (i = -2; i <= 2; i++)
+                    {
+                        for (j = -2; j <= 2; j++)
+                        {
+                            var col = Math.floor((( cube.number - 784 ) % 576 ) / 24);
+                            var row = (( cube.number - 784 ) % 576 ) % 24;
+
+                            cube.lines.push( {from: cubeArray[ cube.number ].position,
+                                to: cubeArray[ col * 28 + 58 + row + i + 28*j].position } );
+                        }
+                    }
+                    break;
+
+				case 1:
+                    for (i = 0; i <= 1; i++)
+                    {
+                        for (j = 0; j <= 1; j++)
+                        {
+                            var col = Math.floor((( cube.number - 4240 ) % 144 ) / 12);
+                            var row = (( cube.number - 4240 ) % 144 ) % 12;
+
+                            cube.lines.push( {from: cubeArray[ cube.number ].position,
+                                to: cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position } );
+                        }
+                    }
+                    break;
+
+				case 2:
+                    for (k = 0; k < 6; k++)
+                    {
+                        for (i = -2; i <= 2; i++)
+                        {
+                            for (j = -2; j <= 2; j++)
+                            {
+                                var col = Math.floor((( cube.number - 5104 ) % 64 ) / 8);
+                                var row = (( cube.number - 5104 ) % 64 ) % 8;
+
+                                cube.lines.push( { from: cubeArray[ cube.number ].position,
+                                    to: cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j].position } );
+                            }
+                        }
+                    }
+                    break;
+
+				case 3:
+                    for (i = 0; i <= 1; i++)
+                    {
+                        for (j = 0; j <= 1; j++)
+                        {
+                            var col = Math.floor((( cube.number - 5616 ) % 16 ) / 4);
+                            var row = (( cube.number - 5616 ) % 16 ) % 4;
+
+                            cube.lines.push( {from: cubeArray[ cube.number ].position,
+                                 to: cubeArray[ 5552 + 8 * col*2 + i + 8 * j + row*2].position } );
+                        }
+                    }
+                    break;
+
+				case 4:
+                    for (j = 5616; j <= 5743; j++)
+                    {
+                        cube.lines.push( {from: cubeArray[ cube.number ].position,
+                            to: cubeArray[ j ].position } );
+                    }
+                    break;
+
+				case 5:
+                    for (j = 5744; j <= 5793; j++)
+                    {
+                        cube.lines.push( {from: cubeArray[ cube.number ].position,
+                            to: cubeArray[ j ].position } );
+                    }
+                    break;
+
+			}
+		    //lines[6][ALL_NODES_IN_THIS][paths for each nodes]
+
+		}
+
+		function whichLayer(i)
+		{
+		    let inLayer = (i, a, b) => {return i >= a && i <= b};
+		    let index = -1;
+		    switch (true)
+			{
+				case inLayer(i, 784, 4239):
+				    index = 0;
+				    break;
+
+				case inLayer(i, 4240, 5103):
+				    index = 1;
+				    break;
+
+				case inLayer(i, 5104, 5615):
+				    index = 2;
+				    break;
+
+				case inLayer(i, 5616, 5743):
+				    index = 3;
+				    break;
+
+				case inLayer(i, 5744, 5793):
+				    index = 4;
+				    break;
+
+				case inLayer(i, 5794, 5803):
+				    index = 5;
+				    break;
+			}
+		    return index;
+		}
 		
 		// For the raycaster
 		function highlightObject( event ) 
@@ -317,10 +728,19 @@
 			event.preventDefault();
 		
 			// Restore the cube back to it's original once the mouse is no longer over it
-			if ( selectedObject ) 
-			{
-				selectedObject.material.color.set( selectedObject.original );
+			if ( selectedObject ) {
+
+				if (waitOver)
+					selectedObject.material.color = allColors[selectedObject.number];
+				else
+					selectedObject.material.color = selectedObject.original;
+
 				selectedObject = null;
+
+
+				for (var i = 0; i < linesInScene.length; i++)
+					scene.remove( linesInScene[i] );
+				linesInScene = [];
 			}
 		
 			var intersects = getIntersects( event.layerX, event.layerY );
@@ -332,11 +752,20 @@
 				{
 					return res && res.object;
 				} )[ 0 ];
-				if ( res && res.object ) 
-				{
-					selectedObject = res.object;
-					selectedObject.material.color.set( HIGHLIGHT_COLOR );
-				}
+        
+                if ( res && res.object ) {
+                    selectedObject = res.object;
+                    res.object.material.color = HIGHLIGHT_COLOR;
+
+
+                    if(selectedObject.number > 783){
+                        //console.log(selectedObject.number);
+                    	for(let line = 0; line < selectedObject.lines.length; line++) {
+                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to);
+                    	}
+                    }
+                }
+				
 			}
 		}
 		
@@ -358,26 +787,195 @@
 			render();
 		
 		}
-		
-		function render() 
+
+
+
+		function layerVolume(l)
 		{
+		    let d;
+            switch (l)
+            {
+                case 0:
+                    d = {x: 24, y: 24, z: 6};
+                    break;
+
+                case 1:
+                    d = {x: 12, y: 12, z: 6};
+                    break;
+
+                case 2:
+                    d = {x: 8, y: 8, z: 8};
+                    break;
+
+                case 3:
+                    d = {x: 4, y: 4, z: 8};
+                    break;
+            }
+            return d;
+		}
+
+		function animateLines(i)
+		{
+            let volume = [784, 4240, 5104, 5616, 5744, 5794];
+		    let layer = whichLayer(i);
+		    let v = layerVolume(layer);
+
+			// for(let line = 0; line < cubeArray[i].lines.length; line++)
+			// {
+			    if(v && layer !=2)
+				{
+                	for(let depth = 0; depth < v.z; depth++)
+                	{
+                		for(let line = 0; line < cubeArray[i].lines.length; line++)
+						{
+                    		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
+                    	}
+                    	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
+                	}
+                }
+			    else
+			    {
+			    	for(let line = 0; line < cubeArray[i].lines.length; line++)
+					{
+                    	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
+                    }
+                    cubeArray[i].material.color = allColors[i];
+			    }
+
+            // }
+            if(layer < 4 && layer != 2) {
+                if((i - volume[layer] < v.x * v.y))
+				{
+				    cubeToAnimate++;
+				}
+                else
+                	cubeToAnimate = volume[layer + 1];
+            }
+            else
+                cubeToAnimate++;
+
+		}
+
+		function removeLines()
+		{
+			for (let k = 0; k < linesInScene.length; k++)
+				scene.remove( linesInScene[k] );
+			linesInScene = [];
+		}
+
+		function convAnimate()
+		{
+			var y = 0, r = 0;
+			var line;
+
+			if (currentNode < IMAGE_SIZE)
+			{	
+
+				// kernel highlight of current computation
+				y = 0;
+				for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
+				{	
+					r = 0;
+					for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
+					{	
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+						{
+							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
+
+							// line = draw(group.children[z*28+s].position, group.children[currentNode+IMAGE_SIZE].position);
+						}
+
+						// color center of kernel
+						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+						{
+							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
+
+							line = draw(group.children[z*28+s].position, group.children[z*28+s+IMAGE_SIZE].position);
+
+							for(let v = 1; v <= filterSize; v++)
+								group.children[z*28+s+IMAGE_SIZE*v].material.color = new THREE.Color ( 1, 0, 0 );
+						}
+
+
+						r += 1;
+					}
+					y += 1;
+				}
+
+				// Recolors original color after highlighting with kernel and ops
+				setTimeout(function()
+				{	
+					y = 0;
+					for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
+					{	
+						r = 0;
+						for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
+						{	
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
+								group.children[z*28+s].material.color = allColors[z*28+s];
+
+							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
+							{
+								for(let v = 1; v <= filterSize; v++)
+									group.children[z*28+s+IMAGE_SIZE*v].material.color = allColors[z*28+s+IMAGE_SIZE*v];
+							}
+
+							scene.remove(lineGroup.children[0]);
+							lineGroup.remove(lineGroup.children[0]);
+							r += 1;
+						}
+						y += 1;
+					}
+					currentNode += 1;
+				}, 10);
+			}
+		}
+		
+		function render() {
 
 			// Outer if statement is to check whether it's in play or pause mode
 			// Inner if statement is to rotate and pan camera around layers
 			if ( isPlaying ) {
-				if ( THETA < 90 ) {
+				if ( theta < 90 ) {
 		
-					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( THETA ) );
-					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( THETA ) );
-					camera.lookAt( scene.position );
-					THETA += ROTATIONSPEED;
-		
-				} else if ( scene.position.z < panDistance ) {
-		
-					camera.position.z -= PANSPEED;
-					scene.position.z  += PANSPEED;
-		
+					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( theta ) );
+					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( theta ) );
+					theta += ROTATIONSPEED;
 				}
+				// else if ( camera.position.z < PANDISTANCE ) {
+		
+				//  	camera.position.z -= PANSPEED;
+				//  	scene.position.z  += PANSPEED;
+
+				// }
+                removeLines();
+				// convAnimate();
+				if(cubeToAnimate < cubeArray.length) {
+                    animateLines(cubeToAnimate);
+                    // cubeArray[cubeToAnimate].material.color = allColors[cubeToAnimate];
+                    
+                }
+			}
+
+			// restart
+			if( plzRestart )
+			{
+				currentNode = 0;
+				for (let i = 0; i < IMAGE_SIZE; i++)
+					cubeArray[i].material.color = allColors[i];
+				for(let i = IMAGE_SIZE; i < cubeArray.length; i++)
+					cubeArray[i].material.color = new THREE.Color ( 0.3, 0.3, 0.3 );
+
+				plzRestart = false;
+			}
+
+			if( isFinished )
+			{
+				for (let i = 0; i < cubeArray.length; i++)
+				{
+					cubeArray[i].material.color = allColors[i];
+				}
+				isFinished = false;
 			}
 		
 			controls.update();
@@ -387,27 +985,95 @@
 		function play() 
 		{
 			isPlaying = true;
+			plzRestart = false;
+			isFinished = false;
 		}
 		
 		function pause() 
 		{
 			isPlaying = false;
+			plzRestart = false;
+			isFinished = false;
 		}
 		
-		function restart() 
-		{
-		
+		function restart() {
+      
+      cubeToAnimate = 784;
 			isPlaying = false;
-			THETA = 0;
+			theta = 0;
 			scene.position.set( 0, 0, 0 );
 			camera.position.set( 0, 0, RADIUS );
 			camera.lookAt( scene.position );
-		
+			plzRestart = true;
+			isFinished = false;
+		}
+
+		function finish() 
+		{
+			isFinished = true;
+			isPlaying = false;
+			plzRestart = false;
+		}
+
+		function next() {
+			isPlaying = false;
+			plzRestart = false;
+			isFinished = false;
+			imgNum++;
+			allColors = [];
+
+			// input layer
+			ilayer = 1;
+			var input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
+			IMG = oneDToMany(input, 1, 28, 28);
+			findRGB(IMG, false);
+			ilayer = 0;
+
+			// for(let l = 0; l < IMAGE_SIZE; l++)
+			// {
+			// 	allColors.push(cubeArray[l].material.color);
+			// }
+
+			// Wait to finish training for good outputs
+			var netout = tf.tensor4d(IMG);
+
+			for (let i = 0; i < layerSize.length; i++)
+			{	
+				var currOut, layerColors, tensorOut;
+
+				netout = model.getLayer('', i).apply(netout);
+
+				if(i != 4)
+				{
+					currOut = netout.dataSync();
+					if(i < layerSize.length - 2)
+					{
+						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
+						findRGB(tensorOut, false);
+					}
+					else
+						findRGB(currOut, true);
+				}
+				currOut = null;
+				layerColors = null;
+				tensorOut = null;
+			}
+			netout = null;
+
+			// console.log(allColors);
+
+			for (let i = 0; i < cubeArray.length; i++)
+			{
+				cubeArray[i].material.color = allColors[i];
+			}
 		}
 
 		window.play = play;
 		window.pause = pause;
 		window.restart = restart;
+		window.finish = finish;
+		window.next = next;
+    
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
@@ -415,6 +1081,8 @@
 		<button onclick="play();">Play</button>
 		<button onclick="pause();">Pause</button>
 		<button onclick="restart();">Restart</button>
+		<button onclick="finish();">Finish</button>
+		<button onclick="next();">Next</button>
 
 	</div>
 	</body>
