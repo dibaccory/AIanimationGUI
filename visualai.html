@@ -936,12 +936,12 @@
 			// Outer if statement is to check whether it's in play or pause mode
 			// Inner if statement is to rotate and pan camera around layers
 			if ( isPlaying ) {
-				if ( theta < 90 ) {
+				// if ( theta < 90 ) {
 		
-					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( theta ) );
-					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( theta ) );
-					theta += ROTATIONSPEED;
-				}
+				// 	camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( theta ) );
+				// 	camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( theta ) );
+				// 	theta += ROTATIONSPEED;
+				// }
 				// else if ( camera.position.z < PANDISTANCE ) {
 		
 				//  	camera.position.z -= PANSPEED;
@@ -998,12 +998,12 @@
 		
 		function restart() {
       
-      cubeToAnimate = 784;
+      		cubeToAnimate = 784;
 			isPlaying = false;
-			theta = 0;
-			scene.position.set( 0, 0, 0 );
-			camera.position.set( 0, 0, RADIUS );
-			camera.lookAt( scene.position );
+			// theta = 0;
+			// scene.position.set( 0, 0, 0 );
+			// camera.position.set( 0, 0, RADIUS );
+			// camera.lookAt( scene.position );
 			plzRestart = true;
 			isFinished = false;
 		}
