@@ -16,7 +16,7 @@
 	<script src="lib/Network.js"></script>
 	<script type= "module">
 		// GLOBAL VARIABLES
-		var container; 		                                  // Will be used to add the .js script to the browser
+		var container; 		                                // Will be used to add the .js script to the browser
 		var camera, raycaster, renderer, scene;             // Three.js essentials
 		var controls;                                       // For orbital controls
 		var mouse = new THREE.Vector3();                    // For the raycaster
@@ -61,6 +61,7 @@
 		// Draws a line that connects the point p1 to point p2
 		function draw( p1, p2 ) {
 			var mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+	
 			var geo = new THREE.Geometry();
 			geo.vertices.push( p1 );
 			geo.vertices.push( p2 );
@@ -146,6 +147,7 @@
 					var color = new THREE.Color( R, G, B );
 					allColors.push(color);
 				}
+
 			}
 		}
 
@@ -177,7 +179,7 @@
 		function imgVis(layer, scene, group, num)
 		{
 			var R, B, G;
-			var geometry = new THREE.BoxGeometry( 10, 10, 10);
+			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let t = 0; t < layer[0][0][0].length; t++)
 			{
@@ -244,7 +246,7 @@
 		function denseVis(layer, scene, group, num)
 		{
 			var R, B, G;
-			var geometry = new THREE.BoxGeometry( 10, 10, 10);
+			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
@@ -288,7 +290,8 @@
 		}
 		
 		// Initializes all the necessary variables for a basic THREE.js application
-		async function init() {
+		async function init() 
+		{
 		
 			container = document.createElement( 'div' );
 			document.body.appendChild( container );
@@ -334,6 +337,7 @@
 			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
 			IMG = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(IMG, scene, group, 0);
+
 			scene = stuffz.scene;
 			group = stuffz.group;
 			ilayer = 0;
@@ -363,7 +367,6 @@
 			dense1 = 0;
 			// console.log(output.dataSync());
 			layerSize.push(output.dataSync().length);
-
 
 			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
@@ -719,7 +722,8 @@
 		}
 		
 		// For the raycaster
-		function highlightObject( event ) {
+		function highlightObject( event ) 
+		{
 		
 			event.preventDefault();
 		
@@ -742,10 +746,13 @@
 			var intersects = getIntersects( event.layerX, event.layerY );
 		
 			// If the mouse is intersecting with an object, change it's color
-			if ( intersects.length > 0 ) {
-				var res = intersects.filter( function ( res ) {
+			if ( intersects.length > 0 ) 
+			{
+				var res = intersects.filter( function ( res ) 
+				{
 					return res && res.object;
 				} )[ 0 ];
+        
                 if ( res && res.object ) {
                     selectedObject = res.object;
                     res.object.material.color = HIGHLIGHT_COLOR;
@@ -758,94 +765,12 @@
                     	}
                     }
                 }
-				/*
-
-					// First Conv
-					if (selectedObject.number >= 784 && selectedObject.number <= 4239)
-					{
-						for (var i = -2; i <= 2; i++)
-						{
-							for (var j = -2; j <= 2; j++)
-							{
-								var col = Math.floor((( selectedObject.number - 784 ) % 576 ) / 24);
-								var row = (( selectedObject.number - 784 ) % 576 ) % 24;
-
-								lines.push( draw( cubeArray[ selectedObject.number ].position,
-								                  cubeArray[ col * 28 + 58 + row + i + 28*j].position ) );
-							}
-						}
-					}
-					// First max pooling
-					else if (selectedObject.number >= 4240 && selectedObject.number <= 5103)
-					{
-						for (var i = 0; i <= 1; i++)
-						{
-							for (var j = 0; j <= 1; j++)
-							{
-								var col = Math.floor((( selectedObject.number - 4240 ) % 144 ) / 12);
-								var row = (( selectedObject.number - 4240 ) % 144 ) % 12;
-
-								lines.push( draw( cubeArray[ selectedObject.number ].position,
-								                  cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position ) );
-							}
-						}
-					}
-					// Second conv.
-					else if (selectedObject.number >= 5104 && selectedObject.number <= 5615)
-					{
-						for (var k = 0; k < 6; k++)
-						{
-							for (var i = -2; i <= 2; i++)
-							{
-								for (var j = -2; j <= 2; j++)
-								{
-									var col = Math.floor((( selectedObject.number - 5104 ) % 64 ) / 8);
-									var row = (( selectedObject.number - 5104 ) % 64 ) % 8;
-
-									lines.push( draw( cubeArray[ selectedObject.number ].position,
-									                  cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j].position ) );
-								}
-							}
-						}
-					}
-					// second max pooling
-					else if (selectedObject.number >= 5616 && selectedObject.number <= 5743)
-					{
-						for (var i = 0; i <= 1; i++)
-						{
-							for (var j = 0; j <= 1; j++)
-							{
-								var col = Math.floor((( selectedObject.number - 5616 ) % 16 ) / 4);
-								var row = (( selectedObject.number - 5616 ) % 16 ) % 4;
-
-								lines.push( draw( cubeArray[ selectedObject.number ].position,
-								                  cubeArray[ 5552 + 8 * col*2 + i + 8 * j + row*2].position ) );
-							}
-						}
-					}
-					// Dense layer
-					else if (selectedObject.number >= 5744 && selectedObject.number <= 5793)
-					{
-						for (var j = 5616; j <= 5743; j++)
-						{
-							lines.push( draw( cubeArray[ selectedObject.number ].position,
-							                  cubeArray[ j ].position ) );
-						}
-					}
-					// Output
-					else if (selectedObject.number >= 5794 && selectedObject.number <= 5803)
-					{
-						for (var j = 5744; j <= 5793; j++)
-						{
-							lines.push( draw( cubeArray[ selectedObject.number ].position,
-							                  cubeArray[ j ].position ) );
-						}
-					}
-				}*/
+				
 			}
 		}
 		
-		function getIntersects( x, y ) {
+		function getIntersects( x, y )
+		{
 		
 			x =  ( x / window.innerWidth  ) * 2 - 1;
 			y = -( y / window.innerHeight ) * 2 + 1;
@@ -855,7 +780,8 @@
 			return raycaster.intersectObject( group, true );
 		}
 		
-		function animate() {
+		function animate() 
+		{
 		
 			requestAnimationFrame( animate );
 			render();
@@ -1056,20 +982,23 @@
 			renderer.render( scene, camera );
 		}
 		
-		function play() {
+		function play() 
+		{
 			isPlaying = true;
 			plzRestart = false;
 			isFinished = false;
 		}
 		
-		function pause() {
+		function pause() 
+		{
 			isPlaying = false;
 			plzRestart = false;
 			isFinished = false;
 		}
 		
 		function restart() {
-            cubeToAnimate = 784;
+      
+      cubeToAnimate = 784;
 			isPlaying = false;
 			theta = 0;
 			scene.position.set( 0, 0, 0 );
@@ -1144,7 +1073,7 @@
 		window.restart = restart;
 		window.finish = finish;
 		window.next = next;
-
+    
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
