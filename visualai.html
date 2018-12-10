@@ -14,6 +14,7 @@
 	<script type= "module" src="lib/model.js"></script>
 	<script src="lib/Layer.js"></script>
 	<script src="lib/Network.js"></script>
+	<script type="text/javascript" src="lib/colormap.json"></script>
 	<script type= "module">
 		// GLOBAL VARIABLES
 		var container; 		                                // Will be used to add the .js script to the browser
@@ -35,6 +36,7 @@
 		var waitOver = false;
 		var IMG;
 		var imgNum = 5;
+		var useMap = 4;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -56,6 +58,66 @@
 			init();
 			animate();
 			// console.log(model);
+		}
+
+		// function normalize(val, max, min) { 
+		// 	return (val - min) / (max - min); 
+		// }
+
+		function normalize2(array) {
+		    var ratio = Math.max.apply(Math, array) / 100;
+		    var l = array.length;
+		    var i;
+
+			for (i = 0; i < l; i++) {
+			    array[i] = Math.round(array[i] / ratio);
+			}
+
+			return array;
+		}
+
+		// Colormap functions
+		function colorMap(value, map = 0) {
+			var RGB = [];
+
+			if (value > 1)
+			{
+				value = 1;
+			}
+
+			// grey scale
+			if (map == 0) 
+			{
+				RGB.push(value);
+				RGB.push(value);
+				RGB.push(value);
+			}
+			if (map == 1) 
+			{
+				RGB.push(virdis[Math.round(255*value)][0]);
+				RGB.push(virdis[Math.round(255*value)][1]);
+				RGB.push(virdis[Math.round(255*value)][2]);
+			}
+			if (map == 2)
+			{
+				RGB.push(plasma[Math.round(255*value)][0]);
+				RGB.push(plasma[Math.round(255*value)][1]);
+				RGB.push(plasma[Math.round(255*value)][2]);
+			}
+			if (map == 3)
+			{
+				RGB.push(chloro[Math.round(255*value)][0]);
+				RGB.push(chloro[Math.round(255*value)][1]);
+				RGB.push(chloro[Math.round(255*value)][2]);
+			}
+			if (map == 4)
+			{
+				RGB.push(salinity[Math.round(255*value)][0]);
+				RGB.push(salinity[Math.round(255*value)][1]);
+				RGB.push(salinity[Math.round(255*value)][2]);
+			}
+
+			return RGB;
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -88,7 +150,7 @@
 		function findRGB( layer, dense )
 		{
 			var layerColors = [];
-			var R, B, G;
+			var RGB = [];
 
 			if(!dense)
 			{
@@ -100,27 +162,14 @@
 						{
 							if(ilayer == 1)
 							{
-								R = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								B = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								G = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t]);
 							}
 							else
 							{
-								if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
-								{
-									R = 0;
-									B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-									G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
-								else
-								{
-									B = 0;
-									R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
-									G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t], useMap);
 							}
 
-							var color = new THREE.Color( R, G, B );
+							var color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 							allColors.push(color);
 						}
 					}
@@ -131,20 +180,9 @@
 			{
 				for(let i = 0; i < layer.length; i++)
 				{
-					if(layer[i] <= .5)
-					{
-						R = 0;
-						B = 1 - 2*layer[i];
-						G = 2*layer[i];
-					}
-					else
-					{
-						B = 0;
-						R = 2*layer[i];
-						G = 2 - 2*layer[i];
-					}
+					RGB = colorMap(layer[i], useMap);
 
-					var color = new THREE.Color( R, G, B );
+					var color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 					allColors.push(color);
 				}
 
@@ -178,7 +216,7 @@
 		var ilayer = 1;
 		function imgVis(layer, scene, group, num)
 		{
-			var R, B, G;
+			var RGB = [];
 			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let t = 0; t < layer[0][0][0].length; t++)
@@ -189,27 +227,14 @@
 					{
 							if(ilayer == 1)
 							{
-								R = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								B = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								G = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t]);
 							}
 							else
 							{
-								if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
-								{
-									R = 0;
-									B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-									G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
-								else
-								{
-									B = 0;
-									R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
-									G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t], useMap);
 							}
 
-							var colors = new THREE.Color( R, G, B );
+							var colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 							var material = new THREE.MeshPhongMaterial( { color: colors } );
 							var cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
@@ -245,25 +270,14 @@
 		var dense1 = 1;
 		function denseVis(layer, scene, group, num)
 		{
-			var R, B, G;
+			var RGB = [];
 			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
-				if(layer[j+layer.length/2] <= .5)
-				{
-					R = 0;
-					B = 1 - 2*layer[j+layer.length/2];
-					G = 2*layer[j+layer.length/2];
-				}
-				else
-				{
-					B = 0;
-					R = 2*layer[j+layer.length/2] - 1;
-					G = 2 - 2*layer[j+layer.length/2];
-				}
+				RGB = colorMap(layer[j+layer.length/2], useMap);
 
-				var colors = new THREE.Color( R, G, B );
+				var colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 				var material = new THREE.MeshPhongMaterial( { color: colors } );
 				var cube = new THREE.Mesh( geometry, material );
 				cube.position.x += 12*j;
