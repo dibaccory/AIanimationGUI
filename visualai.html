@@ -36,7 +36,7 @@
 		var waitOver = false;
 		var IMG;
 		var imgNum = 5;
-		var useMap = 1;
+		var useMap = 5;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -121,9 +121,9 @@
 				}
 				else
 				{
-					RGB.push(0);
-					RGB.push(2 - 2*value);
 					RGB.push(2*value - 1);
+					RGB.push(2 - 2*value);
+					RGB.push(0);
 				}
 			}
 
@@ -397,8 +397,7 @@
 
 			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
-			outputArray = normalize(output.dataSync().slice(0));
-			var stuffz = denseVis(outputArray, scene, group, 6);
+			var stuffz = denseVis(output.dataSync(), scene, group, 6);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			// console.log(output.dataSync());
@@ -1074,7 +1073,11 @@
 				if(i != 4)
 				{
 					// currOut = netout.dataSync();
-					currOut = normalize(netout.dataSync().slice(0));
+					if (i != layerSize.length-1)
+						currOut = normalize(netout.dataSync().slice(0));
+					else
+						currOut = netout.dataSync();
+					
 					if(i < layerSize.length - 2)
 					{
 						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
