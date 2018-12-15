@@ -36,7 +36,7 @@
 		var waitOver = false;
 		var IMG;
 		var imgNum = 5;
-		var useMap = 4;
+		var useMap = 1;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -60,17 +60,12 @@
 			// console.log(model);
 		}
 
-		// function normalize(val, max, min) { 
-		// 	return (val - min) / (max - min); 
-		// }
+		function normalize(array) {
+		    var ratio = Math.max.apply(Math, array);
+		    var i, j, k;
 
-		function normalize2(array) {
-		    var ratio = Math.max.apply(Math, array) / 100;
-		    var l = array.length;
-		    var i;
-
-			for (i = 0; i < l; i++) {
-			    array[i] = Math.round(array[i] / ratio);
+			for (i = 0; i < array.length; i++) {
+			    array[i] = array[i] / ratio;
 			}
 
 			return array;
@@ -115,6 +110,21 @@
 				RGB.push(salinity[Math.round(255*value)][0]);
 				RGB.push(salinity[Math.round(255*value)][1]);
 				RGB.push(salinity[Math.round(255*value)][2]);
+			}
+			if (map == 5)
+			{
+				if(value <= .5)
+				{
+					RGB.push(0);
+					RGB.push(2*value);
+					RGB.push(1 - 2*value);
+				}
+				else
+				{
+					RGB.push(0);
+					RGB.push(2 - 2*value);
+					RGB.push(2*value - 1);
+				}
 			}
 
 			return RGB;
@@ -362,11 +372,13 @@
 			for(let i = 0; i < 4; i++)
 			{
 				var output = model.getLayer('', i).apply(output);
-				var fmap = oneDToMany(output.dataSync(), output.shape[3], output.shape[2], output.shape[1]);
+				// console.log(output.dataSync());
+				var outputArray = normalize(output.dataSync().slice(0));
+				// console.log(outputArray);
+				var fmap = oneDToMany(outputArray, output.shape[3], output.shape[2], output.shape[1]);
 				var stuffz = imgVis(fmap, scene, group, i+1);
 				scene = stuffz.scene;
 				group = stuffz.group;
-				// console.log(fmap);
 				layerSize.push(output.dataSync().length);
 			}
 
@@ -375,7 +387,8 @@
 
 			// 1st dense layer
 			var output = model.getLayer('', 5).apply(output);
-			var stuffz = denseVis(output.dataSync(), scene, group, 5);
+			outputArray = normalize(output.dataSync().slice(0));
+			var stuffz = denseVis(outputArray, scene, group, 5);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			dense1 = 0;
@@ -384,7 +397,8 @@
 
 			// prediction layer
 			var output = model.getLayer('', 6).apply(output);
-			var stuffz = denseVis(output.dataSync(), scene, group, 6);
+			outputArray = normalize(output.dataSync().slice(0));
+			var stuffz = denseVis(outputArray, scene, group, 6);
 			scene = stuffz.scene;
 			group = stuffz.group;
 			// console.log(output.dataSync());
@@ -1059,7 +1073,8 @@
 
 				if(i != 4)
 				{
-					currOut = netout.dataSync();
+					// currOut = netout.dataSync();
+					currOut = normalize(netout.dataSync().slice(0));
 					if(i < layerSize.length - 2)
 					{
 						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
