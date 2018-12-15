@@ -37,7 +37,7 @@
 		var waitOver = false;
 		var IMG;
 		var imgNum = 5;
-		var useMap = 5;
+		var useMap = 3;
 		var gui;
 
 		// Button stuff
@@ -61,23 +61,21 @@
 
 		let colorChange = function() {
             switch (colorSelect.map) {
-            case "virdis": useMap = 1; break;
-            case "plasma": useMap = 2; break;
-            case "chloro": useMap = 3; break;
-            case "salinity": useMap = 4; break;
-            case "jet": useMap = 5; break;
+	            case "virdis": useMap = 1; break;
+	            case "plasma": useMap = 2; break;
+	            case "jet": useMap = 3; break;
             }
-            // render();
+            imgNum--;
+            next();
         }
 
 		// The first function that loads
 		window.onload = function() {
-
 			init();
 			animate();
-			// console.log(model);
 		}
 
+		// normalizes output of an entire layer
 		function normalize(array) {
 		    var ratio = Math.max.apply(Math, array);
 		    var i, j, k;
@@ -98,7 +96,7 @@
 				value = 1;
 			}
 
-			// grey scale
+			// gray scale
 			if (map == 0) 
 			{
 				RGB.push(value);
@@ -118,18 +116,6 @@
 				RGB.push(plasma[Math.round(255*value)][2]);
 			}
 			if (map == 3)
-			{
-				RGB.push(chloro[Math.round(255*value)][0]);
-				RGB.push(chloro[Math.round(255*value)][1]);
-				RGB.push(chloro[Math.round(255*value)][2]);
-			}
-			if (map == 4)
-			{
-				RGB.push(salinity[Math.round(255*value)][0]);
-				RGB.push(salinity[Math.round(255*value)][1]);
-				RGB.push(salinity[Math.round(255*value)][2]);
-			}
-			if (map == 5)
 			{
 				if(value <= .5)
 				{
@@ -426,37 +412,31 @@
 				allColors.push(cubeArray[l].material.color);
 			}
 
-			// Wait to finish training for good outputs
-			setTimeout(function()
+			var netout = tf.tensor4d(IMG);
+
+			for (let i = 0; i < layerSize.length; i++)
 			{	
-				var netout = tf.tensor4d(IMG);
+				var currOut, layerColors, tensorOut;
 
-				for (let i = 0; i < layerSize.length; i++)
-				{	
-					var currOut, layerColors, tensorOut;
+				netout = model.getLayer('', i).apply(netout);
 
-					netout = model.getLayer('', i).apply(netout);
-
-					if(i != 4)
+				if(i != 4)
+				{
+					currOut = netout.dataSync();
+					if(i < layerSize.length - 2)
 					{
-						currOut = netout.dataSync();
-						if(i < layerSize.length - 2)
-						{
-							tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
-							findRGB(tensorOut, false);
-						}
-						else
-							findRGB(currOut, true);
+						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
+						findRGB(tensorOut, false);
 					}
-					currOut = null;
-					layerColors = null;
-					tensorOut = null;
+					else
+						findRGB(currOut, true);
 				}
-				netout = null;
-
-				console.log(allColors);
-				waitOver = true;
-			}, WAIT_TIME);
+				currOut = null;
+				layerColors = null;
+				tensorOut = null;
+			}
+			netout = null;
+			waitOver = true;
 
 			var loader = new THREE.FontLoader();
 
@@ -464,15 +444,15 @@
 
     		var textGeo = new THREE.TextGeometry( "First Convolution", {
 
-        font: font,
+		        font: font,
 
-        size: 25,
-        height: 10,
-        curveSegments: 12,
+		        size: 25,
+		        height: 10,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -488,15 +468,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Max Pool", {
 
-        font: font,
+		        font: font,
 
-        size: 25,
-        height: 10,
-        curveSegments: 12,
+		        size: 25,
+		        height: 10,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -512,15 +492,15 @@
 
     		var textGeo = new THREE.TextGeometry( "2nd Convolution", {
 
-        font: font,
+		        font: font,
 
-        size: 15,
-        height: 5,
-        curveSegments: 12,
+		        size: 15,
+		        height: 5,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -536,15 +516,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Max Pool", {
 
-        font: font,
+		        font: font,
 
-        size: 15,
-        height: 5,
-        curveSegments: 12,
+		        size: 15,
+		        height: 5,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -560,15 +540,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Dense", {
 
-        font: font,
+		        font: font,
 
-        size: 10,
-        height: 2,
-        curveSegments: 12,
+		        size: 10,
+		        height: 2,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -584,15 +564,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Output", {
 
-        font: font,
+		        font: font,
 
-        size: 10,
-        height: 2,
-        curveSegments: 12,
+		        size: 10,
+		        height: 2,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -612,7 +592,7 @@
 
 			gui = new dat.GUI();
 	        gui.add(colorSelect, "map", 
-	          ["virdis","plasma","chloro","salinity","jet"] )
+	          ["virdis","plasma","jet"] )
 	          .name( "Color Map" )
 	          .onChange( colorChange );
     	
@@ -989,12 +969,12 @@
 			// Outer if statement is to check whether it's in play or pause mode
 			// Inner if statement is to rotate and pan camera around layers
 			if ( isPlaying ) {
-				if ( theta < 90 ) {
+				// if ( theta < 90 ) {
 		
-					camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( theta ) );
-					camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( theta ) );
-					theta += ROTATIONSPEED;
-				}
+				// 	camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( theta ) );
+				// 	camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( theta ) );
+				// 	theta += ROTATIONSPEED;
+				// }
 				// else if ( camera.position.z < PANDISTANCE ) {
 		
 				//  	camera.position.z -= PANSPEED;
@@ -1054,9 +1034,9 @@
       		cubeToAnimate = 784;
 			isPlaying = false;
 			theta = 0;
-			scene.position.set( 0, 0, 0 );
-			camera.position.set( 0, 0, RADIUS );
-			camera.lookAt( scene.position );
+			// scene.position.set( 0, 0, 0 );
+			// camera.position.set( 0, 0, RADIUS );
+			// camera.lookAt( scene.position );
 			plzRestart = true;
 			isFinished = false;
 		}
@@ -1082,7 +1062,6 @@
 			findRGB(IMG, false);
 			ilayer = 0;
 
-			// Wait to finish training for good outputs
 			var netout = tf.tensor4d(IMG);
 
 			for (let i = 0; i < layerSize.length; i++)
