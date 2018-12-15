@@ -8,6 +8,7 @@
 	</head>
 	<body>
 	<script src="https://threejs.org/build/three.js"></script>
+	<script src='https://threejs.org/examples/js/libs/dat.gui.min.js'></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.3/dist/tf.min.js"></script>
 	<script src="lib/main.js"></script>
@@ -37,6 +38,7 @@
 		var IMG;
 		var imgNum = 5;
 		var useMap = 5;
+		var gui;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -51,6 +53,22 @@
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
+
+
+		let colorSelect = {
+      		map : "jet"
+        };
+
+		let colorChange = function() {
+            switch (colorSelect.map) {
+            case "virdis": useMap = 1; break;
+            case "plasma": useMap = 2; break;
+            case "chloro": useMap = 3; break;
+            case "salinity": useMap = 4; break;
+            case "jet": useMap = 5; break;
+            }
+            // render();
+        }
 
 		// The first function that loads
 		window.onload = function() {
@@ -591,6 +609,14 @@
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
+
+			gui = new dat.GUI();
+	        gui.add(colorSelect, "map", 
+	          ["virdis","plasma","chloro","salinity","jet"] )
+	          .name( "Color Map" )
+	          .onChange( colorChange );
+    	
+    		// controls.addEventListener( 'change', next );
 		}
 
 
@@ -1025,7 +1051,7 @@
 		
 		function restart() {
       
-      cubeToAnimate = 784;
+      		cubeToAnimate = 784;
 			isPlaying = false;
 			theta = 0;
 			scene.position.set( 0, 0, 0 );
@@ -1056,11 +1082,6 @@
 			findRGB(IMG, false);
 			ilayer = 0;
 
-			// for(let l = 0; l < IMAGE_SIZE; l++)
-			// {
-			// 	allColors.push(cubeArray[l].material.color);
-			// }
-
 			// Wait to finish training for good outputs
 			var netout = tf.tensor4d(IMG);
 
@@ -1077,7 +1098,7 @@
 						currOut = normalize(netout.dataSync().slice(0));
 					else
 						currOut = netout.dataSync();
-					
+
 					if(i < layerSize.length - 2)
 					{
 						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
@@ -1105,7 +1126,7 @@
 		window.restart = restart;
 		window.finish = finish;
 		window.next = next;
-    
+        
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
