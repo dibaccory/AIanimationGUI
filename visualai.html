@@ -371,42 +371,45 @@
 			ilayer = 0;
 			layerSize.push(IMAGE_SIZE);
 
-			// loop through conv and pool layers
+			// loop through all layers, abstraction
+			var stuffz;
 			var output = tf.tensor4d(IMG);
-			for(let i = 0; i < 4; i++)
+			for(let i = 0; i < model.layers.length; i++)
 			{
-				var output = model.getLayer('', i).apply(output);
-				// console.log(output.dataSync());
-				var outputArray = normalize(output.dataSync().slice(0));
-				// console.log(outputArray);
-				var fmap = oneDToMany(outputArray, output.shape[3], output.shape[2], output.shape[1]);
-				var stuffz = imgVis(fmap, scene, group, i+1);
-				scene = stuffz.scene;
-				group = stuffz.group;
-				layerSize.push(output.dataSync().length);
+				// layer computation
+				output = model.getLayer('', i).apply(output);
+
+				// Visualize all layers besides flatten
+				if (!model.getLayer('', i).name.includes("flatten"))
+				{	
+					// normalize layer data for color space
+					var outputArray = normalize(output.dataSync().slice(0));
+
+					// conv or pool layers
+					if (!model.getLayer('', i).name.includes("dense"))
+					{
+						var fmap = oneDToMany(outputArray, output.shape[3], output.shape[2], output.shape[1]);
+						stuffz = imgVis(fmap, scene, group, i+1);
+					}
+					// dense layers
+					else
+					{	
+						if (i != model.layers.length - 1)
+							stuffz = denseVis(outputArray, scene, group, i);
+						// output layer, softmax so no normalization
+						else
+						{
+							dense1 = 0;
+							stuffz = denseVis(output.dataSync(), scene, group, i);
+						}
+					}
+				
+					scene = stuffz.scene;
+					group = stuffz.group;
+					layerSize.push(layerSize[i] + output.dataSync().length);
+				}
 			}
-
-			// flatten layer
-			var output = model.getLayer('', 4).apply(output);
-
-			// 1st dense layer
-			var output = model.getLayer('', 5).apply(output);
-			outputArray = normalize(output.dataSync().slice(0));
-			var stuffz = denseVis(outputArray, scene, group, 5);
-			scene = stuffz.scene;
-			group = stuffz.group;
-			dense1 = 0;
-			// console.log(output.dataSync());
-			layerSize.push(output.dataSync().length);
-
-			// prediction layer
-			var output = model.getLayer('', 6).apply(output);
-			var stuffz = denseVis(output.dataSync(), scene, group, 6);
-			scene = stuffz.scene;
-			group = stuffz.group;
-			// console.log(output.dataSync());
-			layerSize.push(output.dataSync().length);
-		
+			console.log(layerSize);
 			for(let l = 0; l < IMAGE_SIZE; l++)
 			{
 				allColors.push(cubeArray[l].material.color);
