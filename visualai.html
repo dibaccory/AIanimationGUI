@@ -61,7 +61,7 @@
 
 		let colorChange = function() {
             switch (colorSelect.map) {
-	            case "virdis": useMap = 1; break;
+	            case "viridis": useMap = 1; break;
 	            case "plasma": useMap = 2; break;
 	            case "jet": useMap = 3; break;
             }
@@ -105,9 +105,9 @@
 			}
 			if (map == 1) 
 			{
-				RGB.push(virdis[Math.round(255*value)][0]);
-				RGB.push(virdis[Math.round(255*value)][1]);
-				RGB.push(virdis[Math.round(255*value)][2]);
+				RGB.push(viridis[Math.round(255*value)][0]);
+				RGB.push(viridis[Math.round(255*value)][1]);
+				RGB.push(viridis[Math.round(255*value)][2]);
 			}
 			if (map == 2)
 			{
@@ -595,7 +595,7 @@
 
 			gui = new dat.GUI();
 	        gui.add(colorSelect, "map", 
-	          ["virdis","plasma","jet"] )
+	          ["viridis","plasma","jet"] )
 	          .name( "Color Map" )
 	          .onChange( colorChange );
     	
