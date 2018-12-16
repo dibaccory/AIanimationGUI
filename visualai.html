@@ -265,7 +265,7 @@
 							cube.original = colors;
 
 							cube.number = numbox++;
-                        	cubeArray.push( cube);
+                        	cubeArray.push( cube );
                         	if(cube.number > 783)
                         	{
                             	getLinesForCube(cube);
@@ -307,8 +307,8 @@
 				cube.original = colors;
 				cube.number = numbox++;
 				//console.log(cube.number);
-                cubeArray.push( cube);
-                getLinesForCube(cube);
+                cubeArray.push( cube );
+                getLinesForCube( cube );
 
 				scene.add( cube );
 				group.add( cube );
@@ -716,25 +716,25 @@
 
 			// for(let line = 0; line < cubeArray[i].lines.length; line++)
 			// {
-			    if(v && layer !=2)
-				{
-                	for(let depth = 0; depth < v.z; depth++)
-                	{
-                		for(let line = 0; line < cubeArray[i].lines.length; line++)
-						{
-                    		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
-                    	}
-                    	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
-                	}
-                }
-			    else
-			    {
-			    	for(let line = 0; line < cubeArray[i].lines.length; line++)
+		    if(v && layer !=2)
+			{
+            	for(let depth = 0; depth < v.z; depth++)
+            	{
+            		for(let line = 0; line < cubeArray[i].lines.length; line++)
 					{
-                    	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
-                    }
-                    cubeArray[i].material.color = allColors[i];
-			    }
+                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
+                	}
+                	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
+            	}
+            }
+		    else
+		    {
+		    	for(let line = 0; line < cubeArray[i].lines.length; line++)
+				{
+                	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
+                }
+                cubeArray[i].material.color = allColors[i];
+		    }
 
             // }
             if(layer < 4 && layer != 2) {
@@ -983,12 +983,12 @@
 	<div id="roadmap">
 		<br/>
 		&nbsp;Road Map<br/>
-		&nbsp;- Color connections, visibility&nbsp;&nbsp;</br>
-		&nbsp;- Drag and drop layers together&nbsp;&nbsp;</br>
+		&nbsp;- Color connections, visibility&nbsp;</br>
+		&nbsp;- Drag and drop layers together&nbsp;</br>
 		&nbsp;- Import/Export models</br>
 		&nbsp;- More datasets</br>
 		&nbsp;- Visualization tools</br>
-		&nbsp;- Large networks</br>
+		&nbsp;- Large networks, new layers</br>
 		&nbsp;- Import and connect datasets</br>
 		&nbsp;- <i>Aesthetics</i></br>
 		<br/>
