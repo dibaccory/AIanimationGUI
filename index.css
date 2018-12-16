@@ -13,6 +13,11 @@ body {
 	width: 100%;
 	text-align: center;
 }
+#roadmap {
+	background-color: rgba(50, 50, 50, .5);
+	color: white;
+	display: inline-block;
+}
 a {
 	text-decoration: underline;
 	cursor: pointer;
