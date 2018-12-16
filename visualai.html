@@ -8,12 +8,14 @@
 	</head>
 	<body>
 	<script src="https://threejs.org/build/three.js"></script>
+	<script src='https://threejs.org/examples/js/libs/dat.gui.min.js'></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.3/dist/tf.min.js"></script>
 	<script src="lib/main.js"></script>
 	<script type= "module" src="lib/model.js"></script>
 	<script src="lib/Layer.js"></script>
 	<script src="lib/Network.js"></script>
+	<script type="text/javascript" src="lib/colormap.json"></script>
 	<script type= "module">
 		// GLOBAL VARIABLES
 		var container; 		                                // Will be used to add the .js script to the browser
@@ -35,6 +37,8 @@
 		var waitOver = false;
 		var IMG;
 		var imgNum = 5;
+		var useMap = 3;
+		var gui;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -50,12 +54,84 @@
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
 
+
+		let colorSelect = {
+      		map : "jet"
+        };
+
+		let colorChange = function() {
+            switch (colorSelect.map) {
+	            case "viridis": useMap = 1; break;
+	            case "plasma": useMap = 2; break;
+	            case "jet": useMap = 3; break;
+            }
+            imgNum--;
+            next();
+        }
+
 		// The first function that loads
 		window.onload = function() {
-
 			init();
 			animate();
-			// console.log(model);
+		}
+
+		// normalizes output of an entire layer
+		function normalize(array) {
+		    var ratio = Math.max.apply(Math, array);
+		    var i, j, k;
+
+			for (i = 0; i < array.length; i++) {
+			    array[i] = array[i] / ratio;
+			}
+
+			return array;
+		}
+
+		// Colormap functions
+		function colorMap(value, map = 0) {
+			var RGB = [];
+
+			if (value > 1)
+			{
+				value = 1;
+			}
+
+			// gray scale
+			if (map == 0) 
+			{
+				RGB.push(value);
+				RGB.push(value);
+				RGB.push(value);
+			}
+			if (map == 1) 
+			{
+				RGB.push(viridis[Math.round(255*value)][0]);
+				RGB.push(viridis[Math.round(255*value)][1]);
+				RGB.push(viridis[Math.round(255*value)][2]);
+			}
+			if (map == 2)
+			{
+				RGB.push(plasma[Math.round(255*value)][0]);
+				RGB.push(plasma[Math.round(255*value)][1]);
+				RGB.push(plasma[Math.round(255*value)][2]);
+			}
+			if (map == 3)
+			{
+				if(value <= .5)
+				{
+					RGB.push(0);
+					RGB.push(2*value);
+					RGB.push(1 - 2*value);
+				}
+				else
+				{
+					RGB.push(2*value - 1);
+					RGB.push(2 - 2*value);
+					RGB.push(0);
+				}
+			}
+
+			return RGB;
 		}
 
 		// Draws a line that connects the point p1 to point p2
@@ -88,7 +164,7 @@
 		function findRGB( layer, dense )
 		{
 			var layerColors = [];
-			var R, B, G;
+			var RGB = [];
 
 			if(!dense)
 			{
@@ -100,27 +176,14 @@
 						{
 							if(ilayer == 1)
 							{
-								R = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								B = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								G = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t]);
 							}
 							else
 							{
-								if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
-								{
-									R = 0;
-									B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-									G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
-								else
-								{
-									B = 0;
-									R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
-									G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t], useMap);
 							}
 
-							var color = new THREE.Color( R, G, B );
+							var color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 							allColors.push(color);
 						}
 					}
@@ -131,20 +194,9 @@
 			{
 				for(let i = 0; i < layer.length; i++)
 				{
-					if(layer[i] <= .5)
-					{
-						R = 0;
-						B = 1 - 2*layer[i];
-						G = 2*layer[i];
-					}
-					else
-					{
-						B = 0;
-						R = 2*layer[i];
-						G = 2 - 2*layer[i];
-					}
+					RGB = colorMap(layer[i], useMap);
 
-					var color = new THREE.Color( R, G, B );
+					var color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 					allColors.push(color);
 				}
 
@@ -178,7 +230,7 @@
 		var ilayer = 1;
 		function imgVis(layer, scene, group, num)
 		{
-			var R, B, G;
+			var RGB = [];
 			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let t = 0; t < layer[0][0][0].length; t++)
@@ -189,27 +241,14 @@
 					{
 							if(ilayer == 1)
 							{
-								R = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								B = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								G = layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t]);
 							}
 							else
 							{
-								if(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] <= .5)
-								{
-									R = 0;
-									B = 1 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-									G = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
-								else
-								{
-									B = 0;
-									R = 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t] - 1;
-									G = 2 - 2*layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t];
-								}
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t], useMap);
 							}
 
-							var colors = new THREE.Color( R, G, B );
+							var colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 							var material = new THREE.MeshPhongMaterial( { color: colors } );
 							var cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
@@ -245,25 +284,14 @@
 		var dense1 = 1;
 		function denseVis(layer, scene, group, num)
 		{
-			var R, B, G;
+			var RGB = [];
 			var geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
-				if(layer[j+layer.length/2] <= .5)
-				{
-					R = 0;
-					B = 1 - 2*layer[j+layer.length/2];
-					G = 2*layer[j+layer.length/2];
-				}
-				else
-				{
-					B = 0;
-					R = 2*layer[j+layer.length/2] - 1;
-					G = 2 - 2*layer[j+layer.length/2];
-				}
+				RGB = colorMap(layer[j+layer.length/2], useMap);
 
-				var colors = new THREE.Color( R, G, B );
+				var colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 				var material = new THREE.MeshPhongMaterial( { color: colors } );
 				var cube = new THREE.Mesh( geometry, material );
 				cube.position.x += 12*j;
@@ -343,75 +371,75 @@
 			ilayer = 0;
 			layerSize.push(IMAGE_SIZE);
 
-			// loop through conv and pool layers
+			// loop through all layers, abstraction
+			var stuffz;
 			var output = tf.tensor4d(IMG);
-			for(let i = 0; i < 4; i++)
+			for(let i = 0; i < model.layers.length; i++)
 			{
-				var output = model.getLayer('', i).apply(output);
-				var fmap = oneDToMany(output.dataSync(), output.shape[3], output.shape[2], output.shape[1]);
-				var stuffz = imgVis(fmap, scene, group, i+1);
-				scene = stuffz.scene;
-				group = stuffz.group;
-				// console.log(fmap);
-				layerSize.push(output.dataSync().length);
+				// layer computation
+				output = model.getLayer('', i).apply(output);
+
+				// Visualize all layers besides flatten
+				if (!model.getLayer('', i).name.includes("flatten"))
+				{	
+					// normalize layer data for color space
+					var outputArray = normalize(output.dataSync().slice(0));
+
+					// conv or pool layers
+					if (!model.getLayer('', i).name.includes("dense"))
+					{
+						var fmap = oneDToMany(outputArray, output.shape[3], output.shape[2], output.shape[1]);
+						stuffz = imgVis(fmap, scene, group, i+1);
+					}
+					// dense layers
+					else
+					{	
+						if (i != model.layers.length - 1)
+							stuffz = denseVis(outputArray, scene, group, i);
+						// output layer, softmax so no normalization
+						else
+						{
+							dense1 = 0;
+							stuffz = denseVis(output.dataSync(), scene, group, i);
+						}
+					}
+				
+					scene = stuffz.scene;
+					group = stuffz.group;
+					layerSize.push(layerSize[i] + output.dataSync().length);
+				}
 			}
-
-			// flatten layer
-			var output = model.getLayer('', 4).apply(output);
-
-			// 1st dense layer
-			var output = model.getLayer('', 5).apply(output);
-			var stuffz = denseVis(output.dataSync(), scene, group, 5);
-			scene = stuffz.scene;
-			group = stuffz.group;
-			dense1 = 0;
-			// console.log(output.dataSync());
-			layerSize.push(output.dataSync().length);
-
-			// prediction layer
-			var output = model.getLayer('', 6).apply(output);
-			var stuffz = denseVis(output.dataSync(), scene, group, 6);
-			scene = stuffz.scene;
-			group = stuffz.group;
-			// console.log(output.dataSync());
-			layerSize.push(output.dataSync().length);
-		
+			console.log(layerSize);
 			for(let l = 0; l < IMAGE_SIZE; l++)
 			{
 				allColors.push(cubeArray[l].material.color);
 			}
 
-			// Wait to finish training for good outputs
-			setTimeout(function()
+			var netout = tf.tensor4d(IMG);
+
+			for (let i = 0; i < layerSize.length; i++)
 			{	
-				var netout = tf.tensor4d(IMG);
+				var currOut, layerColors, tensorOut;
 
-				for (let i = 0; i < layerSize.length; i++)
-				{	
-					var currOut, layerColors, tensorOut;
+				netout = model.getLayer('', i).apply(netout);
 
-					netout = model.getLayer('', i).apply(netout);
-
-					if(i != 4)
+				if(i != 4)
+				{
+					currOut = netout.dataSync();
+					if(i < layerSize.length - 2)
 					{
-						currOut = netout.dataSync();
-						if(i < layerSize.length - 2)
-						{
-							tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
-							findRGB(tensorOut, false);
-						}
-						else
-							findRGB(currOut, true);
+						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
+						findRGB(tensorOut, false);
 					}
-					currOut = null;
-					layerColors = null;
-					tensorOut = null;
+					else
+						findRGB(currOut, true);
 				}
-				netout = null;
-
-				console.log(allColors);
-				waitOver = true;
-			}, WAIT_TIME);
+				currOut = null;
+				layerColors = null;
+				tensorOut = null;
+			}
+			netout = null;
+			waitOver = true;
 
 			var loader = new THREE.FontLoader();
 
@@ -419,15 +447,15 @@
 
     		var textGeo = new THREE.TextGeometry( "First Convolution", {
 
-        font: font,
+		        font: font,
 
-        size: 25,
-        height: 10,
-        curveSegments: 12,
+		        size: 25,
+		        height: 10,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -443,15 +471,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Max Pool", {
 
-        font: font,
+		        font: font,
 
-        size: 25,
-        height: 10,
-        curveSegments: 12,
+		        size: 25,
+		        height: 10,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -467,15 +495,15 @@
 
     		var textGeo = new THREE.TextGeometry( "2nd Convolution", {
 
-        font: font,
+		        font: font,
 
-        size: 15,
-        height: 5,
-        curveSegments: 12,
+		        size: 15,
+		        height: 5,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -491,15 +519,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Max Pool", {
 
-        font: font,
+		        font: font,
 
-        size: 15,
-        height: 5,
-        curveSegments: 12,
+		        size: 15,
+		        height: 5,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -515,15 +543,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Dense", {
 
-        font: font,
+		        font: font,
 
-        size: 10,
-        height: 2,
-        curveSegments: 12,
+		        size: 10,
+		        height: 2,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -539,15 +567,15 @@
 
     		var textGeo = new THREE.TextGeometry( "Output", {
 
-        font: font,
+		        font: font,
 
-        size: 10,
-        height: 2,
-        curveSegments: 12,
+		        size: 10,
+		        height: 2,
+		        curveSegments: 12,
 
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
+		        bevelThickness: 1,
+		        bevelSize: 1,
+		        bevelEnabled: true
 
     		} );
 
@@ -564,6 +592,14 @@
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
+
+			gui = new dat.GUI();
+	        gui.add(colorSelect, "map", 
+	          ["viridis","plasma","jet"] )
+	          .name( "Color Map" )
+	          .onChange( colorChange );
+    	
+    		// controls.addEventListener( 'change', next );
 		}
 
 
@@ -1000,7 +1036,8 @@
       
       		cubeToAnimate = 784;
 			isPlaying = false;
-			// theta = 0;
+      
+			theta = 0;
 			// scene.position.set( 0, 0, 0 );
 			// camera.position.set( 0, 0, RADIUS );
 			// camera.lookAt( scene.position );
@@ -1029,12 +1066,6 @@
 			findRGB(IMG, false);
 			ilayer = 0;
 
-			// for(let l = 0; l < IMAGE_SIZE; l++)
-			// {
-			// 	allColors.push(cubeArray[l].material.color);
-			// }
-
-			// Wait to finish training for good outputs
 			var netout = tf.tensor4d(IMG);
 
 			for (let i = 0; i < layerSize.length; i++)
@@ -1045,7 +1076,12 @@
 
 				if(i != 4)
 				{
-					currOut = netout.dataSync();
+					// currOut = netout.dataSync();
+					if (i != layerSize.length-1)
+						currOut = normalize(netout.dataSync().slice(0));
+					else
+						currOut = netout.dataSync();
+
 					if(i < layerSize.length - 2)
 					{
 						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
@@ -1073,7 +1109,7 @@
 		window.restart = restart;
 		window.finish = finish;
 		window.next = next;
-    
+        
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br/>
@@ -1084,6 +1120,19 @@
 		<button onclick="finish();">Finish</button>
 		<button onclick="next();">Next</button>
 
+	</div>
+
+	<div id="roadmap">
+		<br/>
+		&nbsp;Road Map<br/>
+		&nbsp;- Color weight connections</br>
+		&nbsp;- Drag and drop layers together&nbsp;&nbsp;</br>
+		&nbsp;- Import/Export models</br>
+		&nbsp;- More datasets</br>
+		&nbsp;- Visualization tools</br>
+		&nbsp;- Large networks</br>
+		&nbsp;- Import and connect datasets</br>
+		<br/>
 	</div>
 	</body>
 </html>

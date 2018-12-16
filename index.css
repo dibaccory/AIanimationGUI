@@ -13,6 +13,14 @@ body {
 	width: 100%;
 	text-align: center;
 }
+#roadmap {
+	background-color: rgba(50, 50, 50, .5);
+	color: white;
+	/*width: 100%;*/
+	position: absolute;
+	display: inline-block;
+	margin: 80px 10px 10px 10px;
+}
 a {
 	text-decoration: underline;
 	cursor: pointer;
