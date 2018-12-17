@@ -32,6 +32,7 @@
 		var filterSize = model.layers[0].getWeights()[0].shape[3];
 		var currentNode = 0, x = 0;
 		var layerSize = [];
+		var layerSum = [];
 		var allColors = [];
 		var lineGroup;
 		var cubeToAnimate = 784;
@@ -78,8 +79,8 @@
 
 		// normalizes output of an entire layer
 		function normalize(array) {
-		    var ratio = Math.max.apply(Math, array);
-		    var i, j, k;
+		    let ratio = Math.max.apply(Math, array);
+		    let i, j, k;
 
 			for (i = 0; i < array.length; i++) {
 			    array[i] = array[i] / ratio;
@@ -88,9 +89,9 @@
 			return array;
 		}
 
-		// Colormap functions
+		// Colormap functions, if no color space passed then gray scale used
 		function colorMap(value, map = 0) {
-			var RGB = [];
+			let RGB = [];
 
 			if (value > 1)
 			{
@@ -116,6 +117,7 @@
 				RGB.push(plasma[Math.round(255*value)][1]);
 				RGB.push(plasma[Math.round(255*value)][2]);
 			}
+			// jet, blue to green to red heatmap
 			if (map == 3)
 			{
 				if(value <= .5)
@@ -137,12 +139,12 @@
 
 		// Draws a line that connects the point p1 to point p2
 		function draw( p1, p2 ) {
-			var mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+			let mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
 	
-			var geo = new THREE.Geometry();
+			let geo = new THREE.Geometry();
 			geo.vertices.push( p1 );
 			geo.vertices.push( p2 );
-			var line = new THREE.Line( geo, mat );
+			let line = new THREE.Line( geo, mat );
 			scene.add( line );
 			// lineGroup.add(line);
 
@@ -150,11 +152,11 @@
 		}
 
         function drawLine( from, to ) {
-            var mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
-            var geo = new THREE.Geometry();
+            let mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+            let geo = new THREE.Geometry();
             geo.vertices.push( from );
             geo.vertices.push( to );
-            var line = new THREE.Line( geo, mat );
+            let line = new THREE.Line( geo, mat );
             linesInScene.push(line);
             scene.add( line );
             // lineGroup.add(line);
@@ -162,30 +164,35 @@
             return line;
         }
 
-		function findRGB( layer, dense )
+		function findRGB( layer, dense, num )
 		{
-			var layerColors = [];
-			var RGB = [];
-
+			let RGB = [];
+			// console.log(layer);
 			if(!dense)
 			{
-				for(let t = 0; t < layer[0][0][0].length; t++)
+				for(let v = 0; v < layer[0][0][0].length; v++)
 				{
 					for(let i = -layer[0][0].length/2; i < layer[0][0].length/2; i++)
 					{
 						for(let j = -layer[0].length/2; j < layer[0].length/2; j++)
 						{
-							if(ilayer == 1)
+							if(ilayer)
 							{
-								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t]);
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][v]);
 							}
 							else
 							{
-								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t], useMap);
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][v], useMap);
 							}
 
-							var color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
+							let color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 							allColors.push(color);
+
+							if (!ilayer)
+							{
+								allColors[allColors.length-1].lineColors = [];
+								allColors[allColors.length-1].lineColors.push(1);
+							}
 						}
 					}
 				}
@@ -197,20 +204,21 @@
 				{
 					RGB = colorMap(layer[i], useMap);
 
-					var color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
+					let color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 					allColors.push(color);
 				}
 
 			}
+
 		}
 
 		// 1D array, channels, width, height
 		// outputs js array in original shape
 		function oneDToMany( layer, n, m , l ) {
-			var arr =  Array.prototype.slice.call(layer);
-			var newArr = [];
-			var newArr2 = [];
-			var finalarr = [];
+			let arr =  Array.prototype.slice.call(layer);
+			let newArr = [];
+			let newArr2 = [];
+			let finalarr = [];
 			while(arr.length) 
 			{
 				newArr.push(arr.splice(0,n));
@@ -228,11 +236,11 @@
 		}
 
 		// layer rendering abstraction
-		var ilayer = 1;
+		var ilayer = true;
 		function imgVis(layer, scene, group, num)
 		{
-			var RGB = [];
-			var geometry = new THREE.BoxGeometry(10, 10, 10);
+			let RGB = [];
+			let geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let t = 0; t < layer[0][0][0].length; t++)
 			{
@@ -240,7 +248,7 @@
 				{
 					for(let j = -layer[0].length/2; j < layer[0].length/2; j++)
 					{
-							if(ilayer == 1)
+							if(ilayer)
 							{
 								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t]);
 							}
@@ -249,12 +257,12 @@
 								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t], useMap);
 							}
 
-							var colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
-							var material = new THREE.MeshPhongMaterial( { color: colors } );
-							var cube = new THREE.Mesh( geometry, material );
+							let colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
+							let material = new THREE.MeshPhongMaterial( { color: colors } );
+							let cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
 							cube.position.y += 12*(-j);
-							if(ilayer == 1)
+							if(ilayer)
 							{
 								cube.position.z += t*-25 + (-100*num);
 							}
@@ -282,21 +290,21 @@
 			return {scene: scene, group: group};
 		}
 
-		var dense1 = 1;
+		var dense1 = true;
 		function denseVis(layer, scene, group, num)
 		{
-			var RGB = [];
-			var geometry = new THREE.BoxGeometry(10, 10, 10);
+			let RGB = [];
+			let geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
 				RGB = colorMap(layer[j+layer.length/2], useMap);
 
-				var colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
-				var material = new THREE.MeshPhongMaterial( { color: colors } );
-				var cube = new THREE.Mesh( geometry, material );
+				let colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
+				let material = new THREE.MeshPhongMaterial( { color: colors } );
+				let cube = new THREE.Mesh( geometry, material );
 				cube.position.x += 12*j;
-				if(dense1 == 1)
+				if(dense1)
 				{
 					cube.position.z += (-200*num) - 50;
 				}
@@ -317,6 +325,45 @@
 
 			return {scene: scene, group: group};
 		}
+
+		function colorCoat()
+		{
+			allColors = [];
+
+			// input layer
+			ilayer = true;
+			findRGB(IMG, false, -1);
+			ilayer = false;
+
+			let netout = tf.tensor4d(IMG);
+
+			for (let i = 0; i < layerSize.length; i++)
+			{	
+				let currOut, tensorOut;
+
+				netout = model.getLayer('', i).apply(netout);
+
+				if(i != 4)
+				{
+					// currOut = netout.dataSync();
+					if (i != layerSize.length-1)
+						currOut = normalize(netout.dataSync().slice(0));
+					else
+						currOut = netout.dataSync();
+
+					if(i < layerSize.length - 2)
+					{
+						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
+						findRGB(tensorOut, false, i);
+					}
+					else
+						findRGB(currOut, true, i);
+				}
+				currOut = null;
+				tensorOut = null;
+			}
+			netout = null;
+		}
 		
 		// Initializes all the necessary variables for a basic THREE.js application
 		async function init() 
@@ -331,8 +378,6 @@
 			renderer.setPixelRatio( window.devicePixelRatio );
 			container.appendChild( renderer.domElement );
 
-
-		
 			// Setting the scene
 			scene = new THREE.Scene();
 		
@@ -360,6 +405,28 @@
 			lineGroup = new THREE.Group();
 			scene.add( group );
 			scene.add( lineGroup );
+
+			// calculates size of each layer
+			let ntotal = IMAGE_SIZE;
+			layerSize.push(IMAGE_SIZE);
+			layerSum.push(ntotal);
+			for (let i = 0; i < model.layers.length; i++)
+			{	
+				// dont include flatten layers
+				if (!model.getLayer('', i).name.includes("flatten"))
+				{	
+					let outputShape = model.layers[i].inboundNodes[0].outputShapes[0];
+
+					let totalSize = 1;
+					for (let j = 1; j < outputShape.length; j++)
+					{
+						totalSize *= outputShape[j];
+					}
+					layerSize.push(totalSize);
+					ntotal += totalSize
+					layerSum.push(ntotal);
+				}
+			}
 			
 			// Layer visualizations
 			// input layer
@@ -369,11 +436,10 @@
 
 			scene = stuffz.scene;
 			group = stuffz.group;
-			ilayer = 0;
-			layerSize.push(IMAGE_SIZE);
+			ilayer = false;
 
 			// loop through all layers, abstraction
-			var stuffz;
+			var stuffz, outputArray;
 			var output = tf.tensor4d(IMG);
 			for(let i = 0; i < model.layers.length; i++)
 			{
@@ -384,7 +450,7 @@
 				if (!model.getLayer('', i).name.includes("flatten"))
 				{	
 					// normalize layer data for color space
-					var outputArray = normalize(output.dataSync().slice(0));
+					outputArray = normalize(output.dataSync().slice(0));
 
 					// conv or pool layers
 					if (!model.getLayer('', i).name.includes("dense"))
@@ -400,46 +466,20 @@
 						// output layer, softmax so no normalization
 						else
 						{
-							dense1 = 0;
+							dense1 = false;
 							stuffz = denseVis(output.dataSync(), scene, group, i);
 						}
 					}
 				
 					scene = stuffz.scene;
 					group = stuffz.group;
-					layerSize.push(layerSize[i] + output.dataSync().length);
 				}
 			}
+
 			console.log(layerSize);
-			for(let l = 0; l < IMAGE_SIZE; l++)
-			{
-				allColors.push(cubeArray[l].material.color);
-			}
+			console.log(layerSum);
 
-			var netout = tf.tensor4d(IMG);
-
-			for (let i = 0; i < layerSize.length; i++)
-			{	
-				var currOut, layerColors, tensorOut;
-
-				netout = model.getLayer('', i).apply(netout);
-
-				if(i != 4)
-				{
-					currOut = netout.dataSync();
-					if(i < layerSize.length - 2)
-					{
-						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
-						findRGB(tensorOut, false);
-					}
-					else
-						findRGB(currOut, true);
-				}
-				currOut = null;
-				layerColors = null;
-				tensorOut = null;
-			}
-			netout = null;
+			colorCoat();
 			waitOver = true;
 
 			// Add graphical text to scene
@@ -470,28 +510,7 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 		
 		}
-		//
-		// function getAllLines()
-		// {
-		//     lines[0] = [];
-		//     lines[1] = [];
-		//     lines[2] = [];
-		//     lines[3] = [];
-		//     lines[4] = [];
-		//     lines[5] = [];
-		//
-		//     for(let i = 784; i < cubeArray.length; i++)
-		// 	{
-		// 	    //get layer cube is in
-		// 		let layer = whichLayer(cubeArray[i]);
-		//
-        //         lines[layer][]
-		// 		//get array of lines for this cube
-		// 		let linesForCube = getLinesForCube(layer, cubeArray[i]);
-		// 		lines[layer][i].push(linesForCube);
-		//
-		// 	}
-		// }
+		
 
 		function getLinesForCube(cube)
 		{
@@ -507,8 +526,8 @@
                     {
                         for (j = -2; j <= 2; j++)
                         {
-                            var col = Math.floor((( cube.number - 784 ) % 576 ) / 24);
-                            var row = (( cube.number - 784 ) % 576 ) % 24;
+                            var col = Math.floor((( cube.number - layerSum[0] ) % 576 ) / 24);
+                            var row = (( cube.number - layerSum[0] ) % 576 ) % 24;
 
                             cube.lines.push( {from: cubeArray[ cube.number ].position,
                                 to: cubeArray[ col * 28 + 58 + row + i + 28*j].position } );
@@ -521,8 +540,8 @@
                     {
                         for (j = 0; j <= 1; j++)
                         {
-                            var col = Math.floor((( cube.number - 4240 ) % 144 ) / 12);
-                            var row = (( cube.number - 4240 ) % 144 ) % 12;
+                            var col = Math.floor((( cube.number - layerSum[1] ) % 144 ) / 12);
+                            var row = (( cube.number - layerSum[1] ) % 144 ) % 12;
 
                             cube.lines.push( {from: cubeArray[ cube.number ].position,
                                 to: cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position } );
@@ -537,8 +556,8 @@
                         {
                             for (j = -2; j <= 2; j++)
                             {
-                                var col = Math.floor((( cube.number - 5104 ) % 64 ) / 8);
-                                var row = (( cube.number - 5104 ) % 64 ) % 8;
+                                var col = Math.floor((( cube.number - layerSum[2] ) % 64 ) / 8);
+                                var row = (( cube.number - layerSum[2] ) % 64 ) % 8;
 
                                 cube.lines.push( { from: cubeArray[ cube.number ].position,
                                     to: cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j].position } );
@@ -552,8 +571,8 @@
                     {
                         for (j = 0; j <= 1; j++)
                         {
-                            var col = Math.floor((( cube.number - 5616 ) % 16 ) / 4);
-                            var row = (( cube.number - 5616 ) % 16 ) % 4;
+                            var col = Math.floor((( cube.number - layerSum[3] ) % 16 ) / 4);
+                            var row = (( cube.number - layerSum[3] ) % 16 ) % 4;
 
                             cube.lines.push( {from: cubeArray[ cube.number ].position,
                                  to: cubeArray[ 5552 + 8 * col*2 + i + 8 * j + row*2].position } );
@@ -562,7 +581,7 @@
                     break;
 
 				case 4:
-                    for (j = 5616; j <= 5743; j++)
+                    for (j = layerSum[3]; j < layerSum[4]; j++)
                     {
                         cube.lines.push( {from: cubeArray[ cube.number ].position,
                             to: cubeArray[ j ].position } );
@@ -570,7 +589,7 @@
                     break;
 
 				case 5:
-                    for (j = 5744; j <= 5793; j++)
+                    for (j = layerSum[4]; j < layerSum[5]; j++)
                     {
                         cube.lines.push( {from: cubeArray[ cube.number ].position,
                             to: cubeArray[ j ].position } );
@@ -582,36 +601,19 @@
 
 		}
 
-		function whichLayer(i)
+		function whichLayer(num)
 		{
-		    let inLayer = (i, a, b) => {return i >= a && i <= b};
 		    let index = -1;
-		    switch (true)
-			{
-				case inLayer(i, 784, 4239):
-				    index = 0;
-				    break;
 
-				case inLayer(i, 4240, 5103):
-				    index = 1;
-				    break;
+		    for (let i = 0; i < layerSum.length-1; i++)
+		    {	
+		    	if(num >= layerSum[i] && num < layerSum[i+1])
+		    	{
+		    		index = i;
+		    		break;
+		    	}
+		    }
 
-				case inLayer(i, 5104, 5615):
-				    index = 2;
-				    break;
-
-				case inLayer(i, 5616, 5743):
-				    index = 3;
-				    break;
-
-				case inLayer(i, 5744, 5793):
-				    index = 4;
-				    break;
-
-				case inLayer(i, 5794, 5803):
-				    index = 5;
-				    break;
-			}
 		    return index;
 		}
 		
@@ -687,30 +689,21 @@
 		function layerVolume(l)
 		{
 		    let d;
-            switch (l)
-            {
-                case 0:
-                    d = {x: 24, y: 24, z: 6};
-                    break;
 
-                case 1:
-                    d = {x: 12, y: 12, z: 6};
-                    break;
+		    let outputShape = model.layers[l].inboundNodes[0].outputShapes[0];
+		    
+		    if (outputShape.length > 2)
+            	d = {x: outputShape[1], y: outputShape[2], z: outputShape[3]};
+            else
+            	d = {x: outputShape[1]};
 
-                case 2:
-                    d = {x: 8, y: 8, z: 8};
-                    break;
-
-                case 3:
-                    d = {x: 4, y: 4, z: 8};
-                    break;
-            }
             return d;
 		}
 
 		function animateLines(i)
 		{
-            let volume = [784, 4240, 5104, 5616, 5744, 5794];
+            // let volume = [784, 4240, 5104, 5616, 5744, 5794];
+            let volume = layerSum.slice(0);
 		    let layer = whichLayer(i);
 		    let v = layerVolume(layer);
 
@@ -915,46 +908,11 @@
 			plzRestart = false;
 			isFinished = false;
 			imgNum++;
-			allColors = [];
 
-			// input layer
-			ilayer = 1;
-			var input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
+			let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
 			IMG = oneDToMany(input, 1, 28, 28);
-			findRGB(IMG, false);
-			ilayer = 0;
 
-			var netout = tf.tensor4d(IMG);
-
-			for (let i = 0; i < layerSize.length; i++)
-			{	
-				var currOut, layerColors, tensorOut;
-
-				netout = model.getLayer('', i).apply(netout);
-
-				if(i != 4)
-				{
-					// currOut = netout.dataSync();
-					if (i != layerSize.length-1)
-						currOut = normalize(netout.dataSync().slice(0));
-					else
-						currOut = netout.dataSync();
-
-					if(i < layerSize.length - 2)
-					{
-						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
-						findRGB(tensorOut, false);
-					}
-					else
-						findRGB(currOut, true);
-				}
-				currOut = null;
-				layerColors = null;
-				tensorOut = null;
-			}
-			netout = null;
-
-			// console.log(allColors);
+			colorCoat();
 
 			for (let i = 0; i < cubeArray.length; i++)
 			{
@@ -989,6 +947,7 @@
 		&nbsp;- More datasets</br>
 		&nbsp;- Visualization tools</br>
 		&nbsp;- Large networks, new layers</br>
+		&nbsp;- Log and rank models</br>
 		&nbsp;- Import and connect datasets</br>
 		&nbsp;- <i>Aesthetics</i></br>
 		<br/>
