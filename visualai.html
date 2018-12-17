@@ -406,7 +406,8 @@
 			scene.add( group );
 			scene.add( lineGroup );
 
-			// calculates size of each layer
+			//////////////////////
+			// calculates size of each layer, turn into a function
 			let ntotal = IMAGE_SIZE;
 			layerSize.push(IMAGE_SIZE);
 			layerSum.push(ntotal);
@@ -427,6 +428,7 @@
 					layerSum.push(ntotal);
 				}
 			}
+			////////////////////
 			
 			// Layer visualizations
 			// input layer
@@ -691,7 +693,7 @@
 		    let d;
 
 		    let outputShape = model.layers[l].inboundNodes[0].outputShapes[0];
-		    
+
 		    if (outputShape.length > 2)
             	d = {x: outputShape[1], y: outputShape[2], z: outputShape[3]};
             else
@@ -937,7 +939,7 @@
 		<button onclick="next();">Next</button>
 
 	</div>
-
+	
 	<div id="roadmap">
 		<br/>
 		&nbsp;Road Map<br/>

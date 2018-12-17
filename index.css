@@ -5,6 +5,7 @@ body {
 	margin: 0px;
 	overflow: hidden;
 	background-image: linear-gradient(#1A8FCF,#D1236A);
+	/*background-image: linear-gradient(#0059b2,#151515);*/
 }
 #info {
 	font-size: 18px;
@@ -12,6 +13,7 @@ body {
 	padding: 10px;
 	width: 100%;
 	text-align: center;
+	color: white;
 }
 #roadmap {
 	background-color: rgba(50, 50, 50, .5);
