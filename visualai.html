@@ -752,7 +752,7 @@
             	{
             		for(let line = 0; line < cubeArray[i].lines.length; line++)
 					{
-                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
+                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to, allColors[i + depth * (v.x * v.y - 1)].lineColors[line]);
                 	}
                 	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
             	}
@@ -761,7 +761,7 @@
 		    {
 		    	for(let line = 0; line < cubeArray[i].lines.length; line++)
 				{
-                	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
+                	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to, allColors[i].lineColors[line]);
                 }
                 cubeArray[i].material.color = allColors[i];
 		    }
@@ -816,7 +816,6 @@
 			// restart
 			if( plzRestart )
 			{
-				currentNode = 0;
 				for (let i = 0; i < IMAGE_SIZE; i++)
 					cubeArray[i].material.color = allColors[i];
 				for(let i = IMAGE_SIZE; i < cubeArray.length; i++)
