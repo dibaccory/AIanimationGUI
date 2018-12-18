@@ -19,39 +19,35 @@
 	<script src="lib/textRender.js"></script>
 	<script type= "module">
 		// GLOBAL VARIABLES
-		var container; 		                                // Will be used to add the .js script to the browser
-		var camera, raycaster, renderer, scene;             // Three.js essentials
-		var controls;                                       // For orbital controls
-		var mouse = new THREE.Vector3();                    // For the raycaster
-		var selectedObject = null, group;                   // For the raycaster
-		var theta = 0;                                      // Camera rotating during animation
-		var linesInScene = [];
-		var cubeArray = [];
-		var numbox = 0;
-		var kernelShape = model.layers[0].getWeights()[0].shape[0];
-		var filterSize = model.layers[0].getWeights()[0].shape[3];
-		var currentNode = 0, x = 0;
-		var layerSize = [];
-		var layerSum = [];
-		var allColors = [];
-		var lineGroup;
-		var cubeToAnimate = 784;
-		var waitOver = false;
-		var IMG;
-		var imgNum = 5;
-		var useMap = 3;
-		var gui;
+		var container;								// Will be used to add the .js script to the browser
+		var camera, raycaster, renderer, scene;     // Three.js essentials
+		var controls;                               // For orbital controls
+		var mouse = new THREE.Vector3();            // For the raycaster
+		var selectedObject = null, group;           // For the raycaster
+		var theta = 0;                              // Camera rotating during animation
+		var linesInScene = [];						// Holds currently rendered lines
+		var cubeArray = [];							// Holds currently rendered cubes
+		var numbox = 0;								// count total cubes
+		var layerSize = [];							// independent size of each layer
+		var layerSum = [];							// total nodes up to current layer
+		var allColors = [];							// holds all current colors
+		var cubeToAnimate = 784;					// Where input ends and network begins
+		var waitOver = false;						// when 1st colors are ready
+		var IMG;									// holds current input img
+		var imgNum = 5;								// image number from dataset
+		var useMap = 3;								// color space being used
+		var gui;									// dat gui
+		var highlight = new THREE.Color ( 1,0,0 );  // Object highlight for raycaster
+		var network = [];							// for layer and channel control: [layer][channel][neuron]
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
 
 		// CONSTANTS
 		const RADIUS = 750;                                   // Camera rotation and movement
-		const HIGHLIGHT_COLOR = new THREE.Color ( 0xFF0000 ); // Object highlight for raycaster
 		const PANSPEED = 5, ROTATIONSPEED = 1;
 		const PANDISTANCE = 0;	                            // Determines how far the camera pans
 		const IMAGE_SIZE = 784;
-		const WAIT_TIME = 40000;
 
 		// Grabs model data from other js module
 		import {data, model} from './lib/model.js';
@@ -61,12 +57,15 @@
       		map : "jet"
         };
 
+        // drop down to select color space
 		let colorChange = function() {
             switch (colorSelect.map) {
 	            case "viridis": useMap = 1; break;
 	            case "plasma": useMap = 2; break;
 	            case "jet": useMap = 3; break;
             }
+            let RGB = colorMap(1, useMap);
+            highlight = new THREE.Color( RGB[0], RGB[1], RGB[2] );
             imgNum--;
             next();
         }
@@ -79,11 +78,14 @@
 
 		// normalizes output of an entire layer
 		function normalize(array) {
-		    let ratio = Math.max.apply(Math, array);
+		    let maxi = Math.max.apply(Math, array);
+		    let mini = Math.min.apply(Math, array);
+		    let ratio = maxi - mini;
 		    let i, j, k;
 
 			for (i = 0; i < array.length; i++) {
-			    array[i] = array[i] / ratio;
+				array[i] += Math.abs(mini);
+			    array[i] /= ratio;
 			}
 
 			return array;
@@ -139,35 +141,41 @@
 
 		// Draws a line that connects the point p1 to point p2
 		function draw( p1, p2 ) {
-			let mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+			let mat = new THREE.LineBasicMaterial( { color: highlight, linewidth: 2 } );
 	
 			let geo = new THREE.Geometry();
 			geo.vertices.push( p1 );
 			geo.vertices.push( p2 );
 			let line = new THREE.Line( geo, mat );
 			scene.add( line );
-			// lineGroup.add(line);
 
 			return line;
 		}
 
-        function drawLine( from, to ) {
-            let mat = new THREE.LineBasicMaterial( { color: HIGHLIGHT_COLOR, linewidth: 2 } );
+        function drawLine( from, to, color = highlight) {
+            let mat = new THREE.LineBasicMaterial( { color: color, linewidth: 2 } );
             let geo = new THREE.Geometry();
             geo.vertices.push( from );
             geo.vertices.push( to );
             let line = new THREE.Line( geo, mat );
             linesInScene.push(line);
             scene.add( line );
-            // lineGroup.add(line);
 
             return line;
         }
 
+        // output to color
 		function findRGB( layer, dense, num )
 		{
-			let RGB = [];
+			let RGB = [], RGB2 = [];
+			let weights;
 			// console.log(layer);
+			if (!ilayer && !model.getLayer('', num).name.includes("pool"))
+			{
+				weights = model.layers[num].getWeights()[0].dataSync();
+				weights = normalize(weights.slice(0));
+			}
+
 			if(!dense)
 			{
 				for(let v = 0; v < layer[0][0][0].length; v++)
@@ -188,10 +196,18 @@
 							let color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 							allColors.push(color);
 
-							if (!ilayer)
+							if (!ilayer && !model.getLayer('', num).name.includes("pool"))
 							{
 								allColors[allColors.length-1].lineColors = [];
-								allColors[allColors.length-1].lineColors.push(1);
+								let vol = model.layers[num].getWeights()[0].shape;
+								for (let z = 0; z < vol[2]; z ++)
+									for (let n = 0; n < vol[1]; n++)
+										for (let k = 0; k < vol[0]; k++)
+										{
+											RGB2 = colorMap(weights[k+vol[0]*n+vol[0]*vol[1]*z+vol[0]*vol[1]*vol[2]*v], useMap);
+											color = new THREE.Color( RGB2[0], RGB2[1], RGB2[2] );
+											allColors[allColors.length-1].lineColors.push(color);
+										}
 							}
 						}
 					}
@@ -206,6 +222,18 @@
 
 					let color = new THREE.Color( RGB[0], RGB[1], RGB[2] );
 					allColors.push(color);
+
+					if (!ilayer && !model.getLayer('', num).name.includes("pool"))
+					{
+						allColors[allColors.length-1].lineColors = [];
+						let vol = model.layers[num].getWeights()[0].shape;
+						for (let k = 0; k < vol[0]; k++)
+						{
+							RGB2 = colorMap(weights[k+vol[0]*i], useMap);
+							color = new THREE.Color( RGB2[0], RGB2[1], RGB2[2] );
+							allColors[allColors.length-1].lineColors.push(color);
+						}
+					}
 				}
 
 			}
@@ -235,26 +263,32 @@
 			return finalarr;
 		}
 
-		// layer rendering abstraction
+		// layer rendering abstraction for imgs and conv layers
 		var ilayer = true;
 		function imgVis(layer, scene, group, num)
 		{
 			let RGB = [];
 			let geometry = new THREE.BoxGeometry(10, 10, 10);
 
-			for(let t = 0; t < layer[0][0][0].length; t++)
+			if (num >= 0)
+				network.push([]);
+
+			for(let v = 0; v < layer[0][0][0].length; v++)
 			{
+				if (num >= 0)
+					network[num].push([]);
+
 				for(let i = -layer[0][0].length/2; i < layer[0][0].length/2; i++)
 				{
 					for(let j = -layer[0].length/2; j < layer[0].length/2; j++)
 					{
 							if(ilayer)
 							{
-								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t]);
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][v]);
 							}
 							else
 							{
-								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][t], useMap);
+								RGB = colorMap(layer[0][j+layer[0].length/2][i+layer[0][0].length/2][v], useMap);
 							}
 
 							let colors = new THREE.Color( RGB[0], RGB[1], RGB[2] );
@@ -264,16 +298,20 @@
 							cube.position.y += 12*(-j);
 							if(ilayer)
 							{
-								cube.position.z += t*-25 + (-100*num);
+								cube.position.z += v*-25 + (-100*(num+1));
 							}
 							else
 							{
-								cube.position.z += t*-25 + (-200*num);
+								cube.position.z += v*-25 + (-200*(num+1));
 							}
 							cube.original = colors;
 
 							cube.number = numbox++;
+							cube.layer = num;
+							cube.channel = v;
+							cube.material.transparent = true;
                         	cubeArray.push( cube );
+
                         	if(cube.number > 783)
                         	{
                             	getLinesForCube(cube);
@@ -281,8 +319,8 @@
 
 							scene.add( cube );
 							group.add( cube );
-
-
+							if (num >= 0)
+								network[num][v].push(cube);
 					}
 				}
 			}
@@ -290,11 +328,18 @@
 			return {scene: scene, group: group};
 		}
 
+		// Render fully connected layers
 		var dense1 = true;
 		function denseVis(layer, scene, group, num)
 		{
 			let RGB = [];
 			let geometry = new THREE.BoxGeometry(10, 10, 10);
+
+			if (num >= 0)
+			{
+				network.push([]);
+				network[num].push([]);
+			}
 
 			for(let j = -layer.length/2; j < layer.length/2; j++)
 			{
@@ -306,14 +351,16 @@
 				cube.position.x += 12*j;
 				if(dense1)
 				{
-					cube.position.z += (-200*num) - 50;
+					cube.position.z += (-200*(num+1)) - 50;
 				}
 				else
 				{
-					cube.position.z += (-200*(num-1)) - 150;
+					cube.position.z += (-200*(num)) - 150;
 				}
 				cube.original = colors;
 				cube.number = numbox++;
+				cube.layer = num;
+				cube.channel = 0;
 				//console.log(cube.number);
                 cubeArray.push( cube );
                 getLinesForCube( cube );
@@ -321,11 +368,13 @@
 				scene.add( cube );
 				group.add( cube );
 
+				network[num][0].push(cube);
 			}
 
 			return {scene: scene, group: group};
 		}
 
+		// Computes new outputs for network and converts to color
 		function colorCoat()
 		{
 			allColors = [];
@@ -337,7 +386,7 @@
 
 			let netout = tf.tensor4d(IMG);
 
-			for (let i = 0; i < layerSize.length; i++)
+			for (let i = 0; i < model.layers.length; i++)
 			{	
 				let currOut, tensorOut;
 
@@ -345,8 +394,9 @@
 
 				if(i != 4)
 				{
-					// currOut = netout.dataSync();
-					if (i != layerSize.length-1)
+
+					// if not output layer, normalize
+					if (model.layers[i].outboundNodes.length != 0)
 						currOut = normalize(netout.dataSync().slice(0));
 					else
 						currOut = netout.dataSync();
@@ -402,11 +452,10 @@
 			// A Raycaster can tell what object is the mouse hovering over
 			raycaster = new THREE.Raycaster();
 			group = new THREE.Group();
-			lineGroup = new THREE.Group();
 			scene.add( group );
-			scene.add( lineGroup );
 
-			// calculates size of each layer
+			//////////////////////
+			// calculates size of each layer, turn into a function
 			let ntotal = IMAGE_SIZE;
 			layerSize.push(IMAGE_SIZE);
 			layerSum.push(ntotal);
@@ -427,18 +476,20 @@
 					layerSum.push(ntotal);
 				}
 			}
+			////////////////////
 			
 			// Layer visualizations
 			// input layer
 			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
 			IMG = oneDToMany(input, 1, 28, 28);
-			var stuffz = imgVis(IMG, scene, group, 0);
+			var stuffz = imgVis(IMG, scene, group, -1);
 
 			scene = stuffz.scene;
 			group = stuffz.group;
 			ilayer = false;
 
 			// loop through all layers, abstraction
+			let vislayernum = 0;
 			var stuffz, outputArray;
 			var output = tf.tensor4d(IMG);
 			for(let i = 0; i < model.layers.length; i++)
@@ -456,21 +507,21 @@
 					if (!model.getLayer('', i).name.includes("dense"))
 					{
 						var fmap = oneDToMany(outputArray, output.shape[3], output.shape[2], output.shape[1]);
-						stuffz = imgVis(fmap, scene, group, i+1);
+						stuffz = imgVis(fmap, scene, group, vislayernum);
 					}
 					// dense layers
 					else
 					{	
 						if (i != model.layers.length - 1)
-							stuffz = denseVis(outputArray, scene, group, i);
+							stuffz = denseVis(outputArray, scene, group, vislayernum);
 						// output layer, softmax so no normalization
 						else
 						{
 							dense1 = false;
-							stuffz = denseVis(output.dataSync(), scene, group, i);
+							stuffz = denseVis(output.dataSync(), scene, group, vislayernum);
 						}
 					}
-				
+					vislayernum += 1;
 					scene = stuffz.scene;
 					group = stuffz.group;
 				}
@@ -478,6 +529,9 @@
 
 			console.log(layerSize);
 			console.log(layerSum);
+			console.log(network);
+			// network[0].material.transparent = true;
+			// network[0].material.opacity = 0.1;
 
 			colorCoat();
 			waitOver = true;
@@ -631,10 +685,20 @@
 				else
 					selectedObject.material.color = selectedObject.original;
 
+				if(selectedObject.number > 783)
+					for (let v = 0; v < network[selectedObject.layer].length; v++)
+	                {
+	                	if (v != selectedObject.channel)
+	                	{
+	                		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
+	                			network[selectedObject.layer][v][i].material.opacity = 1;
+	                	}
+	                }
+
 				selectedObject = null;
 
 
-				for (var i = 0; i < linesInScene.length; i++)
+				for (let i = 0; i < linesInScene.length; i++)
 					scene.remove( linesInScene[i] );
 				linesInScene = [];
 			}
@@ -651,14 +715,29 @@
         
                 if ( res && res.object ) {
                     selectedObject = res.object;
-                    res.object.material.color = HIGHLIGHT_COLOR;
+                    res.object.material.color = highlight;
 
 
                     if(selectedObject.number > 783){
                         //console.log(selectedObject.number);
-                    	for(let line = 0; line < selectedObject.lines.length; line++) {
-                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to);
-                    	}
+
+                        if(!model.getLayer('', whichLayer(selectedObject.number)).name.includes("pool"))
+	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
+	                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to, allColors[selectedObject.number].lineColors[line]);
+	                    	}
+	                    else
+	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
+	                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to);
+	                    	}
+
+	                    for (let v = 0; v < network[selectedObject.layer].length; v++)
+	                    {
+	                    	if (v != selectedObject.channel)
+	                    	{
+	                    		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
+	                    			network[selectedObject.layer][v][i].material.opacity = 0.05;
+	                    	}
+	                    }
                     }
                 }
 				
@@ -691,7 +770,7 @@
 		    let d;
 
 		    let outputShape = model.layers[l].inboundNodes[0].outputShapes[0];
-		    
+
 		    if (outputShape.length > 2)
             	d = {x: outputShape[1], y: outputShape[2], z: outputShape[3]};
             else
@@ -715,7 +794,7 @@
             	{
             		for(let line = 0; line < cubeArray[i].lines.length; line++)
 					{
-                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to);
+                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to, allColors[i + depth * (v.x * v.y - 1)].lineColors[line]);
                 	}
                 	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
             	}
@@ -724,7 +803,7 @@
 		    {
 		    	for(let line = 0; line < cubeArray[i].lines.length; line++)
 				{
-                	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to);
+                	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to, allColors[i].lineColors[line]);
                 }
                 cubeArray[i].material.color = allColors[i];
 		    }
@@ -749,74 +828,6 @@
 				scene.remove( linesInScene[k] );
 			linesInScene = [];
 		}
-
-		function convAnimate()
-		{
-			var y = 0, r = 0;
-			var line;
-
-			if (currentNode < IMAGE_SIZE)
-			{	
-
-				// kernel highlight of current computation
-				y = 0;
-				for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
-				{	
-					r = 0;
-					for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
-					{	
-						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-						{
-							group.children[z*28+s].material.color = new THREE.Color ( 1, 0, 0 );
-
-							// line = draw(group.children[z*28+s].position, group.children[currentNode+IMAGE_SIZE].position);
-						}
-
-						// color center of kernel
-						if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
-						{
-							group.children[z*28+s].material.color = new THREE.Color ( 0, 0, 1 );
-
-							line = draw(group.children[z*28+s].position, group.children[z*28+s+IMAGE_SIZE].position);
-
-							for(let v = 1; v <= filterSize; v++)
-								group.children[z*28+s+IMAGE_SIZE*v].material.color = new THREE.Color ( 1, 0, 0 );
-						}
-
-
-						r += 1;
-					}
-					y += 1;
-				}
-
-				// Recolors original color after highlighting with kernel and ops
-				setTimeout(function()
-				{	
-					y = 0;
-					for(let z = -Math.floor(kernelShape/2); z < Math.floor(kernelShape/2)+1; z++)
-					{	
-						r = 0;
-						for(let s = currentNode-Math.floor(kernelShape/2); s < currentNode+Math.floor(kernelShape/2)+1; s++)
-						{	
-							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE)
-								group.children[z*28+s].material.color = allColors[z*28+s];
-
-							if(s+z*28 >= 0 && s >= 0 && s+z*28 < IMAGE_SIZE && r == 2 && y == 2)
-							{
-								for(let v = 1; v <= filterSize; v++)
-									group.children[z*28+s+IMAGE_SIZE*v].material.color = allColors[z*28+s+IMAGE_SIZE*v];
-							}
-
-							scene.remove(lineGroup.children[0]);
-							lineGroup.remove(lineGroup.children[0]);
-							r += 1;
-						}
-						y += 1;
-					}
-					currentNode += 1;
-				}, 10);
-			}
-		}
 		
 		function render() {
 
@@ -836,18 +847,13 @@
 
 				// }
                 removeLines();
-				// convAnimate();
-				if(cubeToAnimate < cubeArray.length) {
+				if(cubeToAnimate < cubeArray.length)
                     animateLines(cubeToAnimate);
-                    // cubeArray[cubeToAnimate].material.color = allColors[cubeToAnimate];
-                    
-                }
 			}
 
 			// restart
 			if( plzRestart )
 			{
-				currentNode = 0;
 				for (let i = 0; i < IMAGE_SIZE; i++)
 					cubeArray[i].material.color = allColors[i];
 				for(let i = IMAGE_SIZE; i < cubeArray.length; i++)
@@ -869,6 +875,7 @@
 			renderer.render( scene, camera );
 		}
 		
+		// animate computation
 		function play() 
 		{
 			isPlaying = true;
@@ -876,6 +883,7 @@
 			isFinished = false;
 		}
 		
+		// pause animation
 		function pause() 
 		{
 			isPlaying = false;
@@ -883,6 +891,7 @@
 			isFinished = false;
 		}
 		
+		// gray out output color
 		function restart() {
       
       		cubeToAnimate = 784;
@@ -896,6 +905,7 @@
 			isFinished = false;
 		}
 
+		// show all output
 		function finish() 
 		{
 			isFinished = true;
@@ -903,6 +913,7 @@
 			plzRestart = false;
 		}
 
+		// visualize next input
 		function next() {
 			isPlaying = false;
 			plzRestart = false;
@@ -917,6 +928,8 @@
 			for (let i = 0; i < cubeArray.length; i++)
 			{
 				cubeArray[i].material.color = allColors[i];
+				// cubeArray[i].material.transparent = true;
+				// cubeArray[i].material.opacity = 0.1;
 			}
 		}
 
@@ -928,8 +941,8 @@
         
 	</script>
 	<div id="info">
-		Super Awesome Convolutional Neural Network Visualizer<br/>
-		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy</br>
+		Super Awesome Convolutional Neural Network Visualizer<br>
+		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy<br>
 		<button onclick="play();">Play</button>
 		<button onclick="pause();">Pause</button>
 		<button onclick="restart();">Restart</button>
@@ -937,20 +950,20 @@
 		<button onclick="next();">Next</button>
 
 	</div>
-
+	
 	<div id="roadmap">
-		<br/>
-		&nbsp;Road Map<br/>
-		&nbsp;- Color connections, visibility&nbsp;</br>
-		&nbsp;- Drag and drop layers together&nbsp;</br>
-		&nbsp;- Import/Export models</br>
-		&nbsp;- More datasets</br>
-		&nbsp;- Visualization tools</br>
-		&nbsp;- Large networks, new layers</br>
-		&nbsp;- Log and rank models</br>
-		&nbsp;- Import and connect datasets</br>
-		&nbsp;- <i>Aesthetics</i></br>
-		<br/>
+		Works in Firefox & Chrome<br>
+		<br>
+		Road Map<br>
+		- <del>Color connections</del>, visibility<br>
+		- Drag and drop layers together<br>
+		- Import/Export models<br>
+		- More datasets<br>
+		- Visualization tools<br>
+		- Large networks, new layers<br>
+		- Log and rank models<br>
+		- Import and connect datasets<br>
+		- <i>Aesthetics</i><br>
 	</div>
 	</body>
 </html>
