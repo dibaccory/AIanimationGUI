@@ -39,6 +39,7 @@
 		var gui;									// dat gui
 		var highlight = new THREE.Color ( 1,0,0 );  // Object highlight for raycaster
 		var network = [];							// for layer and channel control: [layer][channel][neuron]
+		var opacity = false;
 
 		// Button stuff
 		var isFinished = false, plzRestart = false, isPlaying = false;
@@ -529,9 +530,7 @@
 
 			console.log(layerSize);
 			console.log(layerSum);
-			console.log(network);
-			// network[0].material.transparent = true;
-			// network[0].material.opacity = 0.1;
+			// console.log(network);
 
 			colorCoat();
 			waitOver = true;
@@ -544,6 +543,9 @@
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
+
+			// Turn off frozen opacity
+			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
 
 			gui = new dat.GUI();
 	        gui.add(colorSelect, "map", 
@@ -685,7 +687,8 @@
 				else
 					selectedObject.material.color = selectedObject.original;
 
-				if(selectedObject.number > 783)
+				// set back to non transparent
+				if(selectedObject.number > 783 && !opacity)
 					for (let v = 0; v < network[selectedObject.layer].length; v++)
 	                {
 	                	if (v != selectedObject.channel)
@@ -717,7 +720,6 @@
                     selectedObject = res.object;
                     res.object.material.color = highlight;
 
-
                     if(selectedObject.number > 783){
                         //console.log(selectedObject.number);
 
@@ -730,14 +732,20 @@
 	                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to);
 	                    	}
 
-	                    for (let v = 0; v < network[selectedObject.layer].length; v++)
+	                    if (!opacity)
 	                    {
-	                    	if (v != selectedObject.channel)
-	                    	{
-	                    		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
-	                    			network[selectedObject.layer][v][i].material.opacity = 0.05;
-	                    	}
-	                    }
+		                    // set the rest of the channels in layer as transparent
+		                    for (let v = 0; v < network[selectedObject.layer].length; v++)
+		                    {
+		                    	if (v != selectedObject.channel)
+		                    	{
+		                    		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
+		                    			network[selectedObject.layer][v][i].material.opacity = 0.05;
+		                    	}
+		                    }
+		                }
+
+	                    window.addEventListener( "click", function(){if(opacity) opacity = false; else opacity = true;} );
                     }
                 }
 				
@@ -926,11 +934,7 @@
 			colorCoat();
 
 			for (let i = 0; i < cubeArray.length; i++)
-			{
 				cubeArray[i].material.color = allColors[i];
-				// cubeArray[i].material.transparent = true;
-				// cubeArray[i].material.opacity = 0.1;
-			}
 		}
 
 		window.play = play;
