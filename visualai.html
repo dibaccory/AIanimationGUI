@@ -40,9 +40,10 @@
 		var highlight = new THREE.Color ( 1,0,0 );  // Object highlight for raycaster
 		var network = [];							// for layer and channel control: [layer][channel][neuron]
 		var opacity = false;
+		var aniCount = 0;
 
 		// Button stuff
-		var isFinished = false, plzRestart = false, isPlaying = false;
+		var isFinished = false, plzRestart = false, isPlaying = false, isTraining = false;
 
 		// CONSTANTS
 		const RADIUS = 750;                                   // Camera rotation and movement
@@ -51,24 +52,35 @@
 		const IMAGE_SIZE = 784;
 
 		// Grabs model data from other js module
-		import {data, model} from './lib/model.js';
+		import {data, model, train, done} from './lib/model.js';
 
 
 		let colorSelect = {
-      		map : "jet"
+      		map : "Jet"
+        };
+
+        let trainSelect = {
+        	switch : "On"
         };
 
         // drop down to select color space
 		let colorChange = function() {
             switch (colorSelect.map) {
-	            case "viridis": useMap = 1; break;
-	            case "plasma": useMap = 2; break;
-	            case "jet": useMap = 3; break;
+	            case "Viridis": useMap = 1; break;
+	            case "Plasma": useMap = 2; break;
+	            case "Jet": useMap = 3; break;
             }
             let RGB = colorMap(1, useMap);
             highlight = new THREE.Color( RGB[0], RGB[1], RGB[2] );
             imgNum--;
             next();
+        }
+        
+        let animateTraining = function() {
+            switch (trainSelect.switch) {
+	            case "On": isTraining = true; break;
+	            case "Off": isTraining = false; break;
+            }
         }
 
 		// The first function that loads
@@ -311,6 +323,7 @@
 							cube.layer = num;
 							cube.channel = v;
 							cube.material.transparent = true;
+							cube.material.opacity = 1.0;
                         	cubeArray.push( cube );
 
                         	if(cube.number > 783)
@@ -362,6 +375,7 @@
 				cube.number = numbox++;
 				cube.layer = num;
 				cube.channel = 0;
+				cube.material.opacity = 1.0;
 				//console.log(cube.number);
                 cubeArray.push( cube );
                 getLinesForCube( cube );
@@ -543,15 +557,25 @@
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
+			window.addEventListener( "touchstart", highlightObject, false );
+
+			// Turn off frozen opacity, give separate function?
+			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
 
 			// Turn off frozen opacity
 			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
 
 			gui = new dat.GUI();
+
 	        gui.add(colorSelect, "map", 
-	          ["viridis","plasma","jet"] )
+	          ["Viridis","Plasma","Jet"] )
 	          .name( "Color Map" )
 	          .onChange( colorChange );
+
+	        gui.add(trainSelect, "switch",
+	          ["On","Off"] )
+	          .name( "Animate Training" )
+	          .onChange( animateTraining );
     	
     		// controls.addEventListener( 'change', next );
 		}
@@ -585,8 +609,8 @@
                             var col = Math.floor((( cube.number - layerSum[0] ) % 576 ) / 24);
                             var row = (( cube.number - layerSum[0] ) % 576 ) % 24;
 
-                            cube.lines.push( {from: cubeArray[ cube.number ].position,
-                                to: cubeArray[ col * 28 + 58 + row + i + 28*j].position } );
+                            cube.lines.push( {from: cubeArray[ cube.number ],
+                                to: cubeArray[ col * 28 + 58 + row + i + 28*j] } );
                         }
                     }
                     break;
@@ -599,8 +623,8 @@
                             var col = Math.floor((( cube.number - layerSum[1] ) % 144 ) / 12);
                             var row = (( cube.number - layerSum[1] ) % 144 ) % 12;
 
-                            cube.lines.push( {from: cubeArray[ cube.number ].position,
-                                to: cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position } );
+                            cube.lines.push( {from: cubeArray[ cube.number ],
+                                to: cubeArray[ 784 + (24*24*cube.channel) + 24 * col*2 + i + 24 * j + row*2] } );
                         }
                     }
                     break;
@@ -615,8 +639,8 @@
                                 var col = Math.floor((( cube.number - layerSum[2] ) % 64 ) / 8);
                                 var row = (( cube.number - layerSum[2] ) % 64 ) % 8;
 
-                                cube.lines.push( { from: cubeArray[ cube.number ].position,
-                                    to: cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j].position } );
+                                cube.lines.push( { from: cubeArray[ cube.number ],
+                                    to: cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j] } );
                             }
                         }
                     }
@@ -630,8 +654,8 @@
                             var col = Math.floor((( cube.number - layerSum[3] ) % 16 ) / 4);
                             var row = (( cube.number - layerSum[3] ) % 16 ) % 4;
 
-                            cube.lines.push( {from: cubeArray[ cube.number ].position,
-                                 to: cubeArray[ 5552 + 8 * col*2 + i + 8 * j + row*2].position } );
+                            cube.lines.push( {from: cubeArray[ cube.number ],
+                                 to: cubeArray[ 5104 + (8*8*cube.channel) + 8 * col*2 + i + 8 * j + row*2] } );
                         }
                     }
                     break;
@@ -639,16 +663,16 @@
 				case 4:
                     for (j = layerSum[3]; j < layerSum[4]; j++)
                     {
-                        cube.lines.push( {from: cubeArray[ cube.number ].position,
-                            to: cubeArray[ j ].position } );
+                        cube.lines.push( {from: cubeArray[ cube.number ],
+                            to: cubeArray[ j ] } );
                     }
                     break;
 
 				case 5:
                     for (j = layerSum[4]; j < layerSum[5]; j++)
                     {
-                        cube.lines.push( {from: cubeArray[ cube.number ].position,
-                            to: cubeArray[ j ].position } );
+                        cube.lines.push( {from: cubeArray[ cube.number ],
+                            to: cubeArray[ j ] } );
                     }
                     break;
 
@@ -677,7 +701,7 @@
 		function highlightObject( event ) 
 		{
 		
-			event.preventDefault();
+			// event.preventDefault();
 		
 			// Restore the cube back to it's original once the mouse is no longer over it
 			if ( selectedObject ) {
@@ -725,11 +749,14 @@
 
                         if(!model.getLayer('', whichLayer(selectedObject.number)).name.includes("pool"))
 	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
-	                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to, allColors[selectedObject.number].lineColors[line]);
+	                    		// if cube isn't transparent
+	                    		if (selectedObject.lines[line].to.material.opacity > .5)
+	                    	    	drawLine(selectedObject.lines[line].from.position, selectedObject.lines[line].to.position, allColors[selectedObject.number].lineColors[line]);
 	                    	}
 	                    else
 	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
-	                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to);
+	                    		if (selectedObject.lines[line].to.material.opacity > .5)
+	                    	    	drawLine(selectedObject.lines[line].from.position, selectedObject.lines[line].to.position);
 	                    	}
 
 	                    if (!opacity)
@@ -740,7 +767,7 @@
 		                    	if (v != selectedObject.channel)
 		                    	{
 		                    		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
-		                    			network[selectedObject.layer][v][i].material.opacity = 0.05;
+		                    			network[selectedObject.layer][v][i].material.opacity = 0.03;
 		                    	}
 		                    }
 		                }
@@ -802,7 +829,7 @@
             	{
             		for(let line = 0; line < cubeArray[i].lines.length; line++)
 					{
-                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to, allColors[i + depth * (v.x * v.y - 1)].lineColors[line]);
+                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from.position, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to.position, allColors[i + depth * (v.x * v.y - 1)].lineColors[line]);
                 	}
                 	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
             	}
@@ -811,7 +838,7 @@
 		    {
 		    	for(let line = 0; line < cubeArray[i].lines.length; line++)
 				{
-                	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to, allColors[i].lineColors[line]);
+                	drawLine(cubeArray[i].lines[line].from.position, cubeArray[i].lines[line].to.position, allColors[i].lineColors[line]);
                 }
                 cubeArray[i].material.color = allColors[i];
 		    }
@@ -859,6 +886,26 @@
                     animateLines(cubeToAnimate);
 			}
 
+			if ( isTraining )
+			{
+				if (!done)
+					// setTimeout(function(){
+					if (aniCount == 6) {
+						colorCoat();
+
+						for (let i = 0; i < cubeArray.length; i++)
+								cubeArray[i].material.color = allColors[i];
+
+						aniCount = 0;
+					}
+					else
+						aniCount++;
+					// }, aniCount*3000);
+
+				else
+					isTraining = false;
+			}
+
 			// restart
 			if( plzRestart )
 			{
@@ -872,10 +919,11 @@
 
 			if( isFinished )
 			{
+				colorCoat();
+
 				for (let i = 0; i < cubeArray.length; i++)
-				{
 					cubeArray[i].material.color = allColors[i];
-				}
+
 				isFinished = false;
 			}
 		
@@ -922,41 +970,69 @@
 		}
 
 		// visualize next input
+		function prev() {
+			isPlaying = false;
+			plzRestart = false;
+			isFinished = false;
+			if (imgNum > 0)
+				imgNum--;
+
+				let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
+				IMG = oneDToMany(input, 1, 28, 28);
+
+				colorCoat();
+
+				for (let i = 0; i < cubeArray.length; i++)
+					cubeArray[i].material.color = allColors[i];
+		}
+
+		// visualize next input
 		function next() {
 			isPlaying = false;
 			plzRestart = false;
 			isFinished = false;
-			imgNum++;
+			if (imgNum < 60000)
+				imgNum++;
 
-			let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
-			IMG = oneDToMany(input, 1, 28, 28);
+				let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
+				IMG = oneDToMany(input, 1, 28, 28);
 
-			colorCoat();
+				colorCoat();
 
-			for (let i = 0; i < cubeArray.length; i++)
-				cubeArray[i].material.color = allColors[i];
+				for (let i = 0; i < cubeArray.length; i++)
+					cubeArray[i].material.color = allColors[i];
 		}
 
-		window.play = play;
+		function startTrain() {
+			if ( done )
+			{
+				isTraining = true;
+				train();
+		}
+
+		window.startTrain = startTrain;
 		window.pause = pause;
 		window.restart = restart;
 		window.finish = finish;
 		window.next = next;
+		window.prev = prev;
         
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br>
 		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy<br>
-		<button onclick="play();">Play</button>
-		<button onclick="pause();">Pause</button>
-		<button onclick="restart();">Restart</button>
-		<button onclick="finish();">Finish</button>
+		<button onclick="startTrain();">Train</button>
+		<!-- <button onclick="pause();">Pause</button>
+		<button onclick="restart();">Restart</button> -->
+		<button onclick="finish();">Current</button>
+		<button onclick="prev();">Prev</button>
 		<button onclick="next();">Next</button>
 
 	</div>
 	
 	<div id="roadmap">
 		Works in Firefox & Chrome<br>
+		- animate slows training<br>
 		<br>
 		Road Map<br>
 		- <del>Color connections</del>, visibility<br>
