@@ -52,7 +52,7 @@
 		const IMAGE_SIZE = 784;
 
 		// Grabs model data from other js module
-		import {data, model, train, done} from './lib/model.js';
+		import {data, model, train, done, createModel} from './lib/model.js';
 
 
 		let colorSelect = {
@@ -82,6 +82,102 @@
 	            case "Off": isTraining = false; break;
             }
         }
+
+        let alterModel = {
+        	clearModel: function() {
+				let layers = [];
+
+				layers.push(tf.layers.flatten({inputShape: [28, 28, 1]}));
+
+				layers.push(tf.layers.dense({
+		            units: 10,
+		            kernelInitializer: 'varianceScaling',
+		            activation: 'softmax'
+	        	}));
+
+				createModel(layers);
+
+				calcLayerSizes();
+				renderModel();
+
+				console.log(layerSize);
+				console.log(layerSum);
+				console.log(network);
+
+				colorCoat();
+			},
+
+			addConv: function() {
+				let layers2 = [];
+
+				if (layers.length == 2)
+				{
+					layers2.push(tf.layers.conv2d({
+			            inputShape: [28, 28, 1],
+			            kernelSize: 5,
+			            filters: 6,
+			            strides: 1,
+			            activation: 'relu',
+			            kernelInitializer: 'varianceScaling'
+			        }));
+			        
+			        layers2.push(replaceLayer(layers[0]));
+			        layers2.push(layers[1]);
+			        layers = layers2;
+			        return;
+				}
+				
+				else
+				{
+					tf.layers.conv2d({
+			            kernelSize: 5,
+			            filters: 8,
+			            strides: 1,
+			            activation: 'relu',
+			            kernelInitializer: 'varianceScaling'
+			        });
+				}
+
+				createModel(layers);
+
+				calcLayerSizes();
+				renderModel();
+
+				console.log(layerSize);
+				console.log(layerSum);
+				console.log(network);
+
+				colorCoat();
+			}
+		};
+
+		function replaceLayer( name ) {
+
+			if (name.includes("flatten"))
+				return tf.layers.flatten();
+
+			if (name.includes("conv"))
+				return tf.layers.conv2d({
+		            kernelSize: 5,
+		            filters: 6,
+		            strides: 1,
+		            activation: 'relu',
+		            kernelInitializer: 'varianceScaling'
+		        });
+
+			if (name.includes("pool"))
+				return tf.layers.maxPooling2d({
+		            poolSize: [2,2],
+		            strides: [2,2]
+		        });
+
+			if (name.includes("dense"))
+				return tf.layers.dense({
+		            units: 50,
+		            kernelInitializer: 'varianceScaling',
+		            activation: 'relu'
+		        });
+		}
 
 		// The first function that loads
 		window.onload = function() {
@@ -416,7 +512,7 @@
 
 				netout = model.getLayer('', i).apply(netout);
 
-				if(i != 4)
+				if(!model.getLayer('', i).name.includes("flatten"))
 				{
 
 					// if not output layer, normalize
@@ -438,55 +534,13 @@
 			}
 			netout = null;
 		}
-		
-		// Initializes all the necessary variables for a basic THREE.js application
-		async function init() 
+
+		// calculates size of each layer
+		function calcLayerSizes()
 		{
-		
-			container = document.createElement( 'div' );
-			document.body.appendChild( container );
-		
-			// Renderer stuff
-			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			renderer.setPixelRatio( window.devicePixelRatio );
-			container.appendChild( renderer.domElement );
+			layerSize = [];
+			layerSum = [];
 
-			// Setting the scene
-			scene = new THREE.Scene();
-		
-			// Camera stuff
-			var aspect = window.innerWidth / window.innerHeight;
-			camera = new THREE.PerspectiveCamera( 45, aspect, 1, 5000 );
-			camera.position.set( 0, 0, RADIUS );
-			camera.lookAt( scene.position );
-			scene.add( camera );
-
-            controls = new THREE.OrbitControls( camera, renderer.domElement );
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.25;
-		
-			// Light stuff
-			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.5 );
-			scene.add( ambientLight );
-			var dirLight = new THREE.DirectionalLight( 0xffffff, 0.9 );
-			// dirLight.position.set( 1, 0, 1 ).normalize();
-			dirLight.position.copy( camera.position );
-			scene.add( dirLight );
-
-			controls.addEventListener( 'change', light_update );
-			function light_update()
-			{
-			    dirLight.position.copy( camera.position );
-			}
-		
-			// A Raycaster can tell what object is the mouse hovering over
-			raycaster = new THREE.Raycaster();
-			group = new THREE.Group();
-			scene.add( group );
-
-			//////////////////////
-			// calculates size of each layer, turn into a function
 			let ntotal = IMAGE_SIZE;
 			layerSize.push(IMAGE_SIZE);
 			layerSum.push(ntotal);
@@ -507,11 +561,19 @@
 					layerSum.push(ntotal);
 				}
 			}
-			////////////////////
-			
-			// Layer visualizations
-			// input layer
-			var input = data.datasetImages.slice(IMAGE_SIZE*5, IMAGE_SIZE*6);
+		}
+
+		function renderModel()
+		{
+			scene.remove(group);
+			group = new THREE.Group();
+			scene.add(group);
+			network = [];
+			cubeArray = [];
+			numbox = 0;
+
+			ilayer = true;
+			var input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
 			IMG = oneDToMany(input, 1, 28, 28);
 			var stuffz = imgVis(IMG, scene, group, -1);
 
@@ -556,6 +618,55 @@
 					group = stuffz.group;
 				}
 			}
+		}
+		
+		// Initializes all the necessary variables for a basic THREE.js application
+		async function init() 
+		{
+			container = document.createElement( 'div' );
+			document.body.appendChild( container );
+		
+			// Renderer stuff
+			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			container.appendChild( renderer.domElement );
+
+			// Setting the scene
+			scene = new THREE.Scene();
+		
+			// Camera stuff
+			var aspect = window.innerWidth / window.innerHeight;
+			camera = new THREE.PerspectiveCamera( 45, aspect, 1, 5000 );
+			camera.position.set( 0, 0, RADIUS );
+			camera.lookAt( scene.position );
+			scene.add( camera );
+
+            controls = new THREE.OrbitControls( camera, renderer.domElement );
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+		
+			// Light stuff
+			var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.5 );
+			scene.add( ambientLight );
+			var dirLight = new THREE.DirectionalLight( 0xffffff, 0.9 );
+			// dirLight.position.set( 1, 0, 1 ).normalize();
+			dirLight.position.copy( camera.position );
+			scene.add( dirLight );
+
+			controls.addEventListener( 'change', light_update );
+			function light_update()
+			{
+			    dirLight.position.copy( camera.position );
+			}
+		
+			// A Raycaster can tell what object is the mouse hovering over
+			raycaster = new THREE.Raycaster();
+			group = new THREE.Group();
+			scene.add( group );
+
+			calcLayerSizes();
+			renderModel();
 
 			console.log(layerSize);
 			console.log(layerSum);
@@ -592,6 +703,7 @@
 	          .name( "Animate Training" )
 	          .onChange( animateTraining );
 
+	        gui.add(alterModel, "clearModel");
 	  		// var f1 = gui.addFolder('Conv Layer');
 			// f1.add(conv(), 'Filters');
 
@@ -805,47 +917,6 @@
             return d;
 		}
 
-		// Depreciate functionality
-		// function animateLines(i)
-		// {
-  //           // let volume = [784, 4240, 5104, 5616, 5744, 5794];
-  //           let volume = layerSum.slice(0);
-		//     let layer = whichLayer(i);
-		//     let v = layerVolume(layer);
-
-		//     if(v && layer != 2)
-		// 	{
-  //           	for(let depth = 0; depth < v.z; depth++)
-  //           	{
-  //           		for(let line = 0; line < cubeArray[i].lines.length; line++)
-		// 			{
-  //               		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from.position, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to.position, allColors[i + depth * (v.x * v.y - 1)].lineColors[line]);
-  //               	}
-  //               	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
-  //           	}
-  //           }
-		//     else
-		//     {
-		//     	for(let line = 0; line < cubeArray[i].lines.length; line++)
-		// 		{
-  //               	drawLine(cubeArray[i].lines[line].from.position, cubeArray[i].lines[line].to.position, allColors[i].lineColors[line]);
-  //               }
-  //               cubeArray[i].material.color = allColors[i];
-		//     }
-
-  //           if(layer < 4 && layer != 2) {
-  //               if((i - volume[layer] < v.x * v.y))
-		// 		{
-		// 		    cubeToAnimate++;
-		// 		}
-  //               else
-  //               	cubeToAnimate = volume[layer + 1];
-  //           }
-  //           else
-  //               cubeToAnimate++;
-
-		// }
-
 		function removeLines()
 		{
 			for (let k = 0; k < linesInScene.length; k++)
@@ -855,31 +926,9 @@
 		
 		function render() {
 
-			// Depreciate Functionality
-			// // Outer if statement is to check whether it's in play or pause mode
-			// // Inner if statement is to rotate and pan camera around layers
-			// if ( isPlaying ) {
-			// 	// if ( theta < 90 ) {
-		
-			// 	// 	camera.position.x = RADIUS * Math.sin( THREE.Math.degToRad( theta ) );
-			// 	// 	camera.position.z = RADIUS * Math.cos( THREE.Math.degToRad( theta ) );
-			// 	// 	theta += ROTATIONSPEED;
-			// 	// }
-			// 	// else if ( camera.position.z < PANDISTANCE ) {
-		
-			// 	//  	camera.position.z -= PANSPEED;
-			// 	//  	scene.position.z  += PANSPEED;
-
-			// 	// }
-   //              removeLines();
-			// 	if(cubeToAnimate < cubeArray.length)
-   //                  animateLines(cubeToAnimate);
-			// }
-
 			if ( isTraining )
 			{
 				if (!done)
-					// setTimeout(function(){
 					if (aniCount == 6) {
 						colorCoat();
 
@@ -890,7 +939,6 @@
 					}
 					else
 						aniCount++;
-					// }, aniCount*3000);
 
 				else
 					isTraining = false;
@@ -965,6 +1013,7 @@
 			plzRestart = false;
 			isCurrent = false;
 			if (imgNum > 0)
+			{
 				imgNum--;
 
 				let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
@@ -974,6 +1023,7 @@
 
 				for (let i = 0; i < cubeArray.length; i++)
 					cubeArray[i].material.color = allColors[i];
+			}
 		}
 
 		// visualize next input
@@ -982,6 +1032,7 @@
 			plzRestart = false;
 			isCurrent = false;
 			if (imgNum < 60000)
+			{
 				imgNum++;
 
 				let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
@@ -991,6 +1042,7 @@
 
 				for (let i = 0; i < cubeArray.length; i++)
 					cubeArray[i].material.color = allColors[i];
+			}
 		}
 
 		function startTrain() {
