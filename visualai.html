@@ -311,6 +311,7 @@
 							cube.layer = num;
 							cube.channel = v;
 							cube.material.transparent = true;
+							cube.material.opacity = 1.0;
                         	cubeArray.push( cube );
 
                         	if(cube.number > 783)
@@ -362,6 +363,7 @@
 				cube.number = numbox++;
 				cube.layer = num;
 				cube.channel = 0;
+				cube.material.opacity = 1.0;
 				//console.log(cube.number);
                 cubeArray.push( cube );
                 getLinesForCube( cube );
@@ -543,8 +545,9 @@
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
+			window.addEventListener( "touchstart", highlightObject, false );
 
-			// Turn off frozen opacity
+			// Turn off frozen opacity, give separate function?
 			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
 
 			gui = new dat.GUI();
@@ -585,8 +588,8 @@
                             var col = Math.floor((( cube.number - layerSum[0] ) % 576 ) / 24);
                             var row = (( cube.number - layerSum[0] ) % 576 ) % 24;
 
-                            cube.lines.push( {from: cubeArray[ cube.number ].position,
-                                to: cubeArray[ col * 28 + 58 + row + i + 28*j].position } );
+                            cube.lines.push( {from: cubeArray[ cube.number ],
+                                to: cubeArray[ col * 28 + 58 + row + i + 28*j] } );
                         }
                     }
                     break;
@@ -599,8 +602,8 @@
                             var col = Math.floor((( cube.number - layerSum[1] ) % 144 ) / 12);
                             var row = (( cube.number - layerSum[1] ) % 144 ) % 12;
 
-                            cube.lines.push( {from: cubeArray[ cube.number ].position,
-                                to: cubeArray[ 3664 + 24 * col*2 + i + 24 * j + row*2].position } );
+                            cube.lines.push( {from: cubeArray[ cube.number ],
+                                to: cubeArray[ 784 + (24*24*cube.channel) + 24 * col*2 + i + 24 * j + row*2] } );
                         }
                     }
                     break;
@@ -615,8 +618,8 @@
                                 var col = Math.floor((( cube.number - layerSum[2] ) % 64 ) / 8);
                                 var row = (( cube.number - layerSum[2] ) % 64 ) % 8;
 
-                                cube.lines.push( { from: cubeArray[ cube.number ].position,
-                                    to: cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j].position } );
+                                cube.lines.push( { from: cubeArray[ cube.number ],
+                                    to: cubeArray[ col * 12 + (4266 + 144*k) + row + i + 12*j] } );
                             }
                         }
                     }
@@ -630,8 +633,8 @@
                             var col = Math.floor((( cube.number - layerSum[3] ) % 16 ) / 4);
                             var row = (( cube.number - layerSum[3] ) % 16 ) % 4;
 
-                            cube.lines.push( {from: cubeArray[ cube.number ].position,
-                                 to: cubeArray[ 5552 + 8 * col*2 + i + 8 * j + row*2].position } );
+                            cube.lines.push( {from: cubeArray[ cube.number ],
+                                 to: cubeArray[ 5104 + (8*8*cube.channel) + 8 * col*2 + i + 8 * j + row*2] } );
                         }
                     }
                     break;
@@ -639,16 +642,16 @@
 				case 4:
                     for (j = layerSum[3]; j < layerSum[4]; j++)
                     {
-                        cube.lines.push( {from: cubeArray[ cube.number ].position,
-                            to: cubeArray[ j ].position } );
+                        cube.lines.push( {from: cubeArray[ cube.number ],
+                            to: cubeArray[ j ] } );
                     }
                     break;
 
 				case 5:
                     for (j = layerSum[4]; j < layerSum[5]; j++)
                     {
-                        cube.lines.push( {from: cubeArray[ cube.number ].position,
-                            to: cubeArray[ j ].position } );
+                        cube.lines.push( {from: cubeArray[ cube.number ],
+                            to: cubeArray[ j ] } );
                     }
                     break;
 
@@ -677,7 +680,7 @@
 		function highlightObject( event ) 
 		{
 		
-			event.preventDefault();
+			// event.preventDefault();
 		
 			// Restore the cube back to it's original once the mouse is no longer over it
 			if ( selectedObject ) {
@@ -725,11 +728,14 @@
 
                         if(!model.getLayer('', whichLayer(selectedObject.number)).name.includes("pool"))
 	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
-	                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to, allColors[selectedObject.number].lineColors[line]);
+	                    		// if cube isn't transparent
+	                    		if (selectedObject.lines[line].to.material.opacity > .5)
+	                    	    	drawLine(selectedObject.lines[line].from.position, selectedObject.lines[line].to.position, allColors[selectedObject.number].lineColors[line]);
 	                    	}
 	                    else
 	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
-	                    	    drawLine(selectedObject.lines[line].from, selectedObject.lines[line].to);
+	                    		if (selectedObject.lines[line].to.material.opacity > .5)
+	                    	    	drawLine(selectedObject.lines[line].from.position, selectedObject.lines[line].to.position);
 	                    	}
 
 	                    if (!opacity)
@@ -740,7 +746,7 @@
 		                    	if (v != selectedObject.channel)
 		                    	{
 		                    		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
-		                    			network[selectedObject.layer][v][i].material.opacity = 0.05;
+		                    			network[selectedObject.layer][v][i].material.opacity = 0.03;
 		                    	}
 		                    }
 		                }
@@ -802,7 +808,7 @@
             	{
             		for(let line = 0; line < cubeArray[i].lines.length; line++)
 					{
-                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to, allColors[i + depth * (v.x * v.y - 1)].lineColors[line]);
+                		drawLine(cubeArray[i + depth * (v.x * v.y - 1)].lines[line].from.position, cubeArray[i + depth * (v.x * v.y - 1)].lines[line].to.position, allColors[i + depth * (v.x * v.y - 1)].lineColors[line]);
                 	}
                 	cubeArray[i + depth * (v.x * v.y - 1)].material.color = allColors[i + depth * (v.x * v.y - 1)];
             	}
@@ -811,7 +817,7 @@
 		    {
 		    	for(let line = 0; line < cubeArray[i].lines.length; line++)
 				{
-                	drawLine(cubeArray[i].lines[line].from, cubeArray[i].lines[line].to, allColors[i].lineColors[line]);
+                	drawLine(cubeArray[i].lines[line].from.position, cubeArray[i].lines[line].to.position, allColors[i].lineColors[line]);
                 }
                 cubeArray[i].material.color = allColors[i];
 		    }
