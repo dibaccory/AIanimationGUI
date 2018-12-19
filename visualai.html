@@ -562,6 +562,9 @@
 			// Turn off frozen opacity, give separate function?
 			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
 
+			// Turn off frozen opacity
+			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
+
 			gui = new dat.GUI();
 
 	        gui.add(colorSelect, "map", 
@@ -1005,7 +1008,6 @@
 			{
 				isTraining = true;
 				train();
-			}
 		}
 
 		window.startTrain = startTrain;
