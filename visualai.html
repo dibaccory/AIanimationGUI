@@ -40,9 +40,10 @@
 		var highlight = new THREE.Color ( 1,0,0 );  // Object highlight for raycaster
 		var network = [];							// for layer and channel control: [layer][channel][neuron]
 		var opacity = false;
+		var aniCount = 0;
 
 		// Button stuff
-		var isFinished = false, plzRestart = false, isPlaying = false;
+		var isFinished = false, plzRestart = false, isPlaying = false, isTraining = false;
 
 		// CONSTANTS
 		const RADIUS = 750;                                   // Camera rotation and movement
@@ -51,24 +52,35 @@
 		const IMAGE_SIZE = 784;
 
 		// Grabs model data from other js module
-		import {data, model} from './lib/model.js';
+		import {data, model, train, done} from './lib/model.js';
 
 
 		let colorSelect = {
-      		map : "jet"
+      		map : "Jet"
+        };
+
+        let trainSelect = {
+        	switch : "On"
         };
 
         // drop down to select color space
 		let colorChange = function() {
             switch (colorSelect.map) {
-	            case "viridis": useMap = 1; break;
-	            case "plasma": useMap = 2; break;
-	            case "jet": useMap = 3; break;
+	            case "Viridis": useMap = 1; break;
+	            case "Plasma": useMap = 2; break;
+	            case "Jet": useMap = 3; break;
             }
             let RGB = colorMap(1, useMap);
             highlight = new THREE.Color( RGB[0], RGB[1], RGB[2] );
             imgNum--;
             next();
+        }
+        
+        let animateTraining = function() {
+            switch (trainSelect.switch) {
+	            case "On": isTraining = true; break;
+	            case "Off": isTraining = false; break;
+            }
         }
 
 		// The first function that loads
@@ -551,10 +563,16 @@
 			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
 
 			gui = new dat.GUI();
+
 	        gui.add(colorSelect, "map", 
-	          ["viridis","plasma","jet"] )
+	          ["Viridis","Plasma","Jet"] )
 	          .name( "Color Map" )
 	          .onChange( colorChange );
+
+	        gui.add(trainSelect, "switch",
+	          ["On","Off"] )
+	          .name( "Animate Training" )
+	          .onChange( animateTraining );
     	
     		// controls.addEventListener( 'change', next );
 		}
@@ -865,6 +883,26 @@
                     animateLines(cubeToAnimate);
 			}
 
+			if ( isTraining )
+			{
+				if (!done)
+					// setTimeout(function(){
+					if (aniCount == 6) {
+						colorCoat();
+
+						for (let i = 0; i < cubeArray.length; i++)
+								cubeArray[i].material.color = allColors[i];
+
+						aniCount = 0;
+					}
+					else
+						aniCount++;
+					// }, aniCount*3000);
+
+				else
+					isTraining = false;
+			}
+
 			// restart
 			if( plzRestart )
 			{
@@ -878,10 +916,11 @@
 
 			if( isFinished )
 			{
+				colorCoat();
+
 				for (let i = 0; i < cubeArray.length; i++)
-				{
 					cubeArray[i].material.color = allColors[i];
-				}
+
 				isFinished = false;
 			}
 		
@@ -928,41 +967,70 @@
 		}
 
 		// visualize next input
+		function prev() {
+			isPlaying = false;
+			plzRestart = false;
+			isFinished = false;
+			if (imgNum > 0)
+				imgNum--;
+
+				let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
+				IMG = oneDToMany(input, 1, 28, 28);
+
+				colorCoat();
+
+				for (let i = 0; i < cubeArray.length; i++)
+					cubeArray[i].material.color = allColors[i];
+		}
+
+		// visualize next input
 		function next() {
 			isPlaying = false;
 			plzRestart = false;
 			isFinished = false;
-			imgNum++;
+			if (imgNum < 60000)
+				imgNum++;
 
-			let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
-			IMG = oneDToMany(input, 1, 28, 28);
+				let input = data.datasetImages.slice(IMAGE_SIZE*imgNum, IMAGE_SIZE*(imgNum+1));
+				IMG = oneDToMany(input, 1, 28, 28);
 
-			colorCoat();
+				colorCoat();
 
-			for (let i = 0; i < cubeArray.length; i++)
-				cubeArray[i].material.color = allColors[i];
+				for (let i = 0; i < cubeArray.length; i++)
+					cubeArray[i].material.color = allColors[i];
 		}
 
-		window.play = play;
+		function startTrain() {
+			if ( done )
+			{
+				isTraining = true;
+				train();
+			}
+		}
+
+		window.startTrain = startTrain;
 		window.pause = pause;
 		window.restart = restart;
 		window.finish = finish;
 		window.next = next;
+		window.prev = prev;
         
 	</script>
 	<div id="info">
 		Super Awesome Convolutional Neural Network Visualizer<br>
 		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy<br>
-		<button onclick="play();">Play</button>
-		<button onclick="pause();">Pause</button>
-		<button onclick="restart();">Restart</button>
-		<button onclick="finish();">Finish</button>
+		<button onclick="startTrain();">Train</button>
+		<!-- <button onclick="pause();">Pause</button>
+		<button onclick="restart();">Restart</button> -->
+		<button onclick="finish();">Current</button>
+		<button onclick="prev();">Prev</button>
 		<button onclick="next();">Next</button>
 
 	</div>
 	
 	<div id="roadmap">
 		Works in Firefox & Chrome<br>
+		- animate slows training<br>
 		<br>
 		Road Map<br>
 		- <del>Color connections</del>, visibility<br>
