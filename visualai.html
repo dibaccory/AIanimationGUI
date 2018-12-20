@@ -378,6 +378,7 @@
 		function imgVis(layer, scene, group, num)
 		{
 			let RGB = [];
+			let stuffz;
 			let geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			if (num >= 0)
@@ -412,13 +413,13 @@
 							let cube = new THREE.Mesh( geometry, material );
 							cube.position.x += 12*i;
 							cube.position.y += 12*(-j);
-							if(ilayer)
+							if(network.length == 1)
 							{
-								cube.position.z += v*-25 + (-100*(network.length+1));
+								cube.position.z += v*-25 + (-100+cubeArray[783].position.z);
 							}
-							else
+							else if (network.length > 1)
 							{
-								cube.position.z += v*-25 + (-200*(network.length));
+								cube.position.z += v*-25 + (-100 + network[network.length-2][network[network.length-2].length-1][0].position.z);
 							}
 							cube.original = colors;
 
@@ -442,6 +443,13 @@
 				}
 			}
 
+			if (!ilayer)
+			{
+				stuffz = renderText(scene, group, network[network.length-1][0][0].position, model.getLayer('', num).name);
+				scene = stuffz.scene;
+				group = stuffz.group;
+			}
+
 			return {scene: scene, group: group};
 		}
 
@@ -450,6 +458,7 @@
 		function denseVis(layer, scene, group, num)
 		{
 			let RGB = [];
+			let stuffz;
 			let geometry = new THREE.BoxGeometry(10, 10, 10);
 
 			if (num >= 0)
@@ -469,13 +478,13 @@
 				let material = new THREE.MeshLambertMaterial( { color: colors } );
 				let cube = new THREE.Mesh( geometry, material );
 				cube.position.x += 12*j;
-				if(dense1)
+				if(network.length == 1)
 				{
-					cube.position.z += (-200*(network.length)) - 50;
+					cube.position.z += (-100+cubeArray[783].position.z);
 				}
-				else
+				else if (network.length > 1)
 				{
-					cube.position.z += (-200*(network.length-1)) - 150;
+					cube.position.z += (-100 + network[network.length-2][network[network.length-2].length-1][0].position.z);
 				}
 				cube.original = colors;
 				cube.number = numbox++;
@@ -491,6 +500,14 @@
 
 				network[network.length-1][0].push(cube);
 			}
+
+			if (model.layers[num].outboundNodes.length != 0)
+				stuffz = renderText(scene, group, network[network.length-1][0][0].position, model.getLayer('', num).name);
+			else
+				stuffz = renderText(scene, group, network[network.length-1][0][0].position, "output");
+
+			scene = stuffz.scene;
+			group = stuffz.group;
 
 			return {scene: scene, group: group};
 		}
@@ -675,9 +692,6 @@
 
 			colorCoat();
 			waitOver = true;
-
-			// Add graphical text to scene
-			scene = renderText(scene);
 
 			// Makes the animation adapt to the size of the window
 			window.addEventListener( "resize", resize, false );
