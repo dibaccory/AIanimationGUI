@@ -41,6 +41,7 @@
 		var network = [];							// for layer and channel control: [layer][channel][neuron]
 		var opacity = false;
 		var aniCount = 0;
+		var lines = [];
 
 		// Button stuff
 		var isCurrent = false, plzRestart = false, isPlaying = false, isTraining = false;
@@ -428,10 +429,10 @@
 							cube.material.opacity = 1.0;
                         	cubeArray.push( cube );
 
-                        	if(cube.number > 783)
-                        	{
-                            	getLinesForCube(cube);
-                        	}
+                        	// if(cube.number > 783)
+                        	// {
+                         //    	getLinesForCube(cube);
+                        	// }
 
 							scene.add( cube );
 							group.add( cube );
@@ -483,7 +484,7 @@
 				cube.material.opacity = 1.0;
 				//console.log(cube.number);
                 cubeArray.push( cube );
-                getLinesForCube( cube );
+                // getLinesForCube( cube );
 
 				scene.add( cube );
 				group.add( cube );
@@ -743,7 +744,7 @@
                         var col = Math.floor((( cube.number - layerSum[index] ) % area ) / dim);
                         var row = (( cube.number - layerSum[index] ) % area ) % dim;
 
-                        cube.lines.push( {from: cubeArray[ cube.number ],
+                        lines.push( {from: cubeArray[ cube.number ],
                             to: cubeArray[start + (idim*idim*cube.channel) + idim * col*2 + i + idim * j + row*2] } );
                     }
                 }
@@ -763,7 +764,7 @@
                             var col = Math.floor((( cube.number - layerSum[index] ) % area ) / dim);
                             var row = (( cube.number - layerSum[index] ) % area ) % dim;
 
-                            cube.lines.push( { from: cubeArray[ cube.number ],
+                            lines.push( { from: cubeArray[ cube.number ],
                                 to: cubeArray[ col * idim + (start + idim*idim*k) + row + i + idim*j] } );
                         }
                     }
@@ -776,7 +777,7 @@
             {
                 for (j = start; j < layerSum[index]; j++)
                 {
-                    cube.lines.push( {from: cubeArray[ cube.number ],
+                    lines.push( {from: cubeArray[ cube.number ],
                         to: cubeArray[ j ] } );
                 }
                 return;
@@ -835,6 +836,7 @@
 				for (let i = 0; i < linesInScene.length; i++)
 					scene.remove( linesInScene[i] );
 				linesInScene = [];
+				lines = [];
 			}
 		
 			var intersects = getIntersects( event.layerX, event.layerY );
@@ -851,19 +853,21 @@
                     selectedObject = res.object;
                     res.object.material.color = highlight;
 
-                    if(selectedObject.number > 783){
+                    if(selectedObject.number > 783)  {
                         //console.log(selectedObject.number);
 
+                        getLinesForCube(selectedObject);
+
                         if(!model.getLayer('', whichLayer(selectedObject.number)).name.includes("pool"))
-	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
+	                    	for(let line = 0; line < lines.length; line++) {
 	                    		// if cube isn't transparent
-	                    		if (selectedObject.lines[line].to.material.opacity > .5)
-	                    	    	drawLine(selectedObject.lines[line].from.position, selectedObject.lines[line].to.position, allColors[selectedObject.number].lineColors[line]);
+	                    		if (lines[line].to.material.opacity > .5)
+	                    	    	drawLine(lines[line].from.position, lines[line].to.position, allColors[selectedObject.number].lineColors[line]);
 	                    	}
 	                    else
-	                    	for(let line = 0; line < selectedObject.lines.length; line++) {
-	                    		if (selectedObject.lines[line].to.material.opacity > .5)
-	                    	    	drawLine(selectedObject.lines[line].from.position, selectedObject.lines[line].to.position);
+	                    	for(let line = 0; line < lines.length; line++) {
+	                    		if (lines[line].to.material.opacity > .5)
+	                    	    	drawLine(lines[line].from.position, lines[line].to.position);
 	                    	}
 
 	                    if (!opacity)
