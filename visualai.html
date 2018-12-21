@@ -53,7 +53,7 @@
 		const IMAGE_SIZE = 784;
 
 		// Grabs model data from other js module
-		import {data, model, train, done, createModel} from './lib/model.js';
+		import {data, model, train, done, createModel, layers} from './lib/model.js';
 
 
 		let colorSelect = {
@@ -86,17 +86,17 @@
 
         let alterModel = {
         	clearModel: function() {
-				let layers = [];
+				let alayers = [];
 
-				layers.push(tf.layers.flatten({inputShape: [28, 28, 1]}));
+				alayers.push(tf.layers.flatten({inputShape: [28, 28, 1]}));
 
-				layers.push(tf.layers.dense({
+				alayers.push(tf.layers.dense({
 		            units: 10,
 		            kernelInitializer: 'varianceScaling',
 		            activation: 'softmax'
 	        	}));
 
-				createModel(layers);
+				createModel(alayers);
 
 				calcLayerSizes();
 				renderModel();
@@ -110,8 +110,23 @@
 
 			addConv: function() {
 				let layers2 = [];
+				let index = 0;
 
-				if (layers.length == 2)
+				for (let i = 0; i < layers.length; i++)
+				{
+					if (layers[i].name.includes("flatten"))
+					{
+						index = i;
+						break;
+					}
+					else
+						layers2.push(replaceLayer(layers[i]));
+				}
+
+				if (index != 0 && layers[index-1].inboundNodes[0].outputShapes[0][1] < 5)
+					return;
+
+				if (index == 0)
 				{
 					layers2.push(tf.layers.conv2d({
 			            inputShape: [28, 28, 1],
@@ -121,25 +136,100 @@
 			            activation: 'relu',
 			            kernelInitializer: 'varianceScaling'
 			        }));
-			        
-			        layers2.push(replaceLayer(layers[0]));
-			        layers2.push(layers[1]);
-			        layers = layers2;
-			        return;
 				}
-				
 				else
-				{
-					tf.layers.conv2d({
+					layers2.push(tf.layers.conv2d({
 			            kernelSize: 5,
-			            filters: 8,
+			            filters: 6,
 			            strides: 1,
 			            activation: 'relu',
 			            kernelInitializer: 'varianceScaling'
-			        });
+			        }));
+
+				for (let i = index; i < layers.length; i++)
+					layers2.push(replaceLayer(layers[i]));
+
+				createModel(layers2);
+
+				calcLayerSizes();
+				renderModel();
+
+				console.log(layerSize);
+				console.log(layerSum);
+				console.log(network);
+
+				colorCoat();
+			},
+
+			addPool: function() {
+				let layers2 = [];
+				let index = 0;
+
+				for (let i = 0; i < layers.length; i++)
+				{
+					if (layers[i].name.includes("flatten"))
+					{
+						index = i;
+						break;
+					}
+					else
+						layers2.push(replaceLayer(layers[i]));
 				}
 
-				createModel(layers);
+				if (index != 0 && layers[index-1].inboundNodes[0].outputShapes[0][1] < 4)
+					return;
+
+				if (index == 0)
+				{
+					layers2.push(tf.layers.maxPooling2d({
+						inputShape: [28, 28, 1],
+			            poolSize: [2,2],
+			            strides: [2,2]
+			        }));
+				}
+				else
+					layers2.push(tf.layers.maxPooling2d({
+			            poolSize: [2,2],
+			            strides: [2,2]
+			        }));
+
+				for (let i = index; i < layers.length; i++)
+					layers2.push(replaceLayer(layers[i]));
+
+				createModel(layers2);
+
+				calcLayerSizes();
+				renderModel();
+
+				console.log(layerSize);
+				console.log(layerSum);
+				console.log(network);
+
+				colorCoat();
+			},
+
+			units: 50,
+
+			addDense: function() {
+				let layers2 = [];
+				let index = 0;
+
+				for (let i = 0; i < layers.length-1; i++)
+					layers2.push(replaceLayer(layers[i]));
+
+				layers2.push(tf.layers.dense({
+		            units: this.units,
+		            kernelInitializer: 'varianceScaling',
+		            activation: 'relu'
+		        }));
+
+				layers2.push(tf.layers.dense({
+		            units: 10,
+		            kernelInitializer: 'varianceScaling',
+		            activation: 'softmax'
+		        }));
+
+				createModel(layers2);
 
 				calcLayerSizes();
 				renderModel();
@@ -152,29 +242,62 @@
 			}
 		};
 
-		function replaceLayer( name ) {
+		function replaceLayer( layer ) {
 
-			if (name.includes("flatten"))
-				return tf.layers.flatten();
-
-			if (name.includes("conv"))
-				return tf.layers.conv2d({
-		            kernelSize: 5,
-		            filters: 6,
-		            strides: 1,
-		            activation: 'relu',
-		            kernelInitializer: 'varianceScaling'
-		        });
-
-			if (name.includes("pool"))
-				return tf.layers.maxPooling2d({
-		            poolSize: [2,2],
-		            strides: [2,2]
-		        });
-
-			if (name.includes("dense"))
+			if (layer.outboundNodes.length == 0)
 				return tf.layers.dense({
-		            units: 50,
+		            units: 10,
+		            kernelInitializer: 'varianceScaling',
+		            activation: 'softmax'
+		        });
+
+			if (layer.name.includes("flatten"))
+			{
+				if (layer.batchInputShape != null)
+					return tf.layers.flatten({inputShape: [28, 28, 1]});
+				else
+					return tf.layers.flatten();
+			}
+
+			if (layer.name.includes("conv"))
+			{
+				if (layer.batchInputShape != null)
+					return tf.layers.conv2d({
+						inputShape: [28, 28, 1],
+			            kernelSize: 5,
+			            filters: 6,
+			            strides: 1,
+			            activation: 'relu',
+			            kernelInitializer: 'varianceScaling'
+			        });
+				else
+					return tf.layers.conv2d({
+			            kernelSize: 5,
+			            filters: 6,
+			            strides: 1,
+			            activation: 'relu',
+			            kernelInitializer: 'varianceScaling'
+			        });
+			}
+
+			if (layer.name.includes("pool"))
+			{
+				if (layer.batchInputShape != null)
+					return tf.layers.maxPooling2d({
+						inputShape: [28, 28, 1],
+			            poolSize: [2,2],
+			            strides: [2,2]
+			        });
+				else
+					return tf.layers.maxPooling2d({
+			            poolSize: [2,2],
+			            strides: [2,2]
+			        });
+			}
+
+			if (layer.name.includes("dense"))
+				return tf.layers.dense({
+		            units: layer.units,
 		            kernelInitializer: 'varianceScaling',
 		            activation: 'relu'
 		        });
@@ -430,11 +553,6 @@
 							cube.material.opacity = 1.0;
                         	cubeArray.push( cube );
 
-                        	// if(cube.number > 783)
-                        	// {
-                         //    	getLinesForCube(cube);
-                        	// }
-
 							scene.add( cube );
 							group.add( cube );
 							if (num >= 0)
@@ -567,6 +685,7 @@
 				// dont include flatten layers
 				if (!model.getLayer('', i).name.includes("flatten"))
 				{	
+					console.log(model.layers[i]);
 					let outputShape = model.layers[i].inboundNodes[0].outputShapes[0];
 
 					let totalSize = 1;
@@ -718,9 +837,12 @@
 	          .name( "Animate Training" )
 	          .onChange( animateTraining );
 
+	        gui.add(alterModel, "addConv");
+	        gui.add(alterModel, "addPool");
+	        var f1 = gui.addFolder('Add Dense Layer');
+			f1.add(alterModel, 'units');
+	        f1.add(alterModel, "addDense");
 	        gui.add(alterModel, "clearModel");
-	  		// var f1 = gui.addFolder('Conv Layer');
-			// f1.add(conv(), 'Filters');
 
 		}
 
