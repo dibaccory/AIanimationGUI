@@ -267,16 +267,16 @@
 				if (layer.batchInputShape != null)
 					return tf.layers.conv2d({
 						inputShape: [28, 28, 1],
-			            kernelSize: 5,
-			            filters: 6,
+			            kernelSize: layer.kernelSize[0],
+			            filters: layer.filters,
 			            strides: 1,
 			            activation: 'relu',
 			            kernelInitializer: 'varianceScaling'
 			        });
 				else
 					return tf.layers.conv2d({
-			            kernelSize: 5,
-			            filters: 6,
+			            kernelSize: layer.kernelSize[0],
+			            filters: layer.filters,
 			            strides: 1,
 			            activation: 'relu',
 			            kernelInitializer: 'varianceScaling'
