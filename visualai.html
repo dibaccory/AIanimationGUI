@@ -108,6 +108,9 @@
 				colorCoat();
 			},
 
+			kernel: 5,
+			filters: 6,
+
 			addConv: function() {
 				let layers2 = [];
 				let index = 0;
@@ -123,15 +126,15 @@
 						layers2.push(replaceLayer(layers[i]));
 				}
 
-				if (index != 0 && layers[index-1].inboundNodes[0].outputShapes[0][1] < 5)
+				if (index != 0 && layers[index-1].inboundNodes[0].outputShapes[0][1] < this.kernel)
 					return;
 
 				if (index == 0)
 				{
 					layers2.push(tf.layers.conv2d({
 			            inputShape: [28, 28, 1],
-			            kernelSize: 5,
-			            filters: 6,
+			            kernelSize: this.kernel,
+			            filters: this.filters,
 			            strides: 1,
 			            activation: 'relu',
 			            kernelInitializer: 'varianceScaling'
@@ -139,8 +142,8 @@
 				}
 				else
 					layers2.push(tf.layers.conv2d({
-			            kernelSize: 5,
-			            filters: 6,
+			            kernelSize: this.kernel,
+			            filters: this.filters,
 			            strides: 1,
 			            activation: 'relu',
 			            kernelInitializer: 'varianceScaling'
@@ -838,11 +841,13 @@
 	          .onChange( animateTraining );
 
 	        var f1 = gui.addFolder('Add Conv Layer');
+	        f1.add(alterModel, "kernel").step(1);
+	        f1.add(alterModel, "filters").step(1);
 	        f1.add(alterModel, "addConv");
 	        var f2 = gui.addFolder('Add Pool Layer');
 	        f2.add(alterModel, "addPool");
 	        var f3 = gui.addFolder('Add Dense Layer');
-			f3.add(alterModel, 'neurons');
+			f3.add(alterModel, 'neurons').step(1);
 	        f3.add(alterModel, "addDense");
 	        gui.add(alterModel, "clearModel");
 		}
@@ -891,12 +896,12 @@
             // conv layer
             if (network[index].wShape.length == 4)
             {
-				start += idim*2 + 2;
+				// start += idim*2 + 2;
                 for (k = 0; k < network[index].wShape[2]; k++)
                 {
-                    for (i = -2; i <= 2; i++)
+                    for (i = 0; i < network[index].wShape[1]; i++)
                     {
-                        for (j = -2; j <= 2; j++)
+                        for (j = 0; j < network[index].wShape[1]; j++)
                         {
                             var col = Math.floor((( cube.number - layerSum[index] ) % area ) / dim);
                             var row = (( cube.number - layerSum[index] ) % area ) % dim;
