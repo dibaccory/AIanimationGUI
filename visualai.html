@@ -10,7 +10,7 @@
 	<script src="https://threejs.org/build/three.js"></script>
 	<script src='https://threejs.org/examples/js/libs/dat.gui.min.js'></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.3/dist/tf.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.14.1/dist/tf.min.js"></script>
 	<script src="lib/main.js"></script>
 	<script type= "module" src="lib/model.js"></script>
 	<script src="lib/Layer.js"></script>
@@ -208,7 +208,7 @@
 				colorCoat();
 			},
 
-			units: 50,
+			neurons: 20,
 
 			addDense: function() {
 				let layers2 = [];
@@ -218,7 +218,7 @@
 					layers2.push(replaceLayer(layers[i]));
 
 				layers2.push(tf.layers.dense({
-		            units: this.units,
+		            units: this.neurons,
 		            kernelInitializer: 'varianceScaling',
 		            activation: 'relu'
 		        }));
@@ -657,7 +657,7 @@
 					else
 						currOut = netout.dataSync();
 
-					if(i < layerSize.length - 2)
+					if(!model.getLayer('', i).name.includes("dense"))
 					{
 						tensorOut = oneDToMany(currOut, netout.shape[3], netout.shape[2], netout.shape[1]);
 						findRGB(tensorOut, false, i);
@@ -837,13 +837,14 @@
 	          .name( "Animate Training" )
 	          .onChange( animateTraining );
 
-	        gui.add(alterModel, "addConv");
-	        gui.add(alterModel, "addPool");
-	        var f1 = gui.addFolder('Add Dense Layer');
-			f1.add(alterModel, 'units');
-	        f1.add(alterModel, "addDense");
+	        var f1 = gui.addFolder('Add Conv Layer');
+	        f1.add(alterModel, "addConv");
+	        var f2 = gui.addFolder('Add Pool Layer');
+	        f2.add(alterModel, "addPool");
+	        var f3 = gui.addFolder('Add Dense Layer');
+			f3.add(alterModel, 'neurons');
+	        f3.add(alterModel, "addDense");
 	        gui.add(alterModel, "clearModel");
-
 		}
 
 
