@@ -993,7 +993,8 @@
         
                 if ( res && res.object ) {
                     selectedObject = res.object;
-                    res.object.material.color = highlight;
+                    if (selectedObject.number != null)
+                    	res.object.material.color = highlight;
 
                     if(selectedObject.number > 783)  {
                         //console.log(selectedObject.number);
