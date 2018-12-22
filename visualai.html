@@ -108,8 +108,8 @@
 				colorCoat();
 			},
 
-			kernel: 5,
-			filters: 6,
+			kernel: 7,
+			filters: 4,
 
 			addConv: function() {
 				let layers2 = [];
@@ -514,6 +514,7 @@
 					network[network.length-1].wShape = model.layers[num].getWeights()[0].shape;
 				network[network.length-1].iShape = model.layers[num].inboundNodes[0].inputShapes[0];
 				network[network.length-1].oShape = model.layers[num].inboundNodes[0].outputShapes[0];
+				network[network.length-1].view = false;
 			}
 
 			for(let v = 0; v < layer[0][0][0].length; v++)
@@ -541,11 +542,11 @@
 							cube.position.y += 12*(-j);
 							if(network.length == 1)
 							{
-								cube.position.z += v*-25 + (-100+cubeArray[783].position.z);
+								cube.position.z += v*-30 + (-200+cubeArray[783].position.z);
 							}
 							else if (network.length > 1)
 							{
-								cube.position.z += v*-25 + (-100 + network[network.length-2][network[network.length-2].length-1][0].position.z);
+								cube.position.z += v*-30 + (-200 + network[network.length-2][network[network.length-2].length-1][0].position.z);
 							}
 							cube.original = colors;
 
@@ -588,6 +589,7 @@
 				network[network.length-1].wShape = model.layers[num].getWeights()[0].shape;
 				network[network.length-1].iShape = model.layers[num].inboundNodes[0].inputShapes[0];
 				network[network.length-1].oShape = model.layers[num].inboundNodes[0].outputShapes[0];
+				network[network.length-1].view = false;
 				network[network.length-1].push([]);
 			}
 
@@ -601,11 +603,11 @@
 				cube.position.x += 12*j;
 				if(network.length == 1)
 				{
-					cube.position.z += (-100+cubeArray[783].position.z);
+					cube.position.z += (-150+cubeArray[783].position.z);
 				}
 				else if (network.length > 1)
 				{
-					cube.position.z += (-100 + network[network.length-2][network[network.length-2].length-1][0].position.z);
+					cube.position.z += (-150 + network[network.length-2][network[network.length-2].length-1][0].position.z);
 				}
 				cube.original = colors;
 				cube.number = numbox++;
@@ -688,7 +690,7 @@
 				// dont include flatten layers
 				if (!model.getLayer('', i).name.includes("flatten"))
 				{	
-					console.log(model.layers[i]);
+					// console.log(model.layers[i]);
 					let outputShape = model.layers[i].inboundNodes[0].outputShapes[0];
 
 					let totalSize = 1;
@@ -705,7 +707,15 @@
 
 		function renderModel()
 		{
-			scene.remove(group);
+			// scene.remove(group);
+			while (group.children.length)
+			{
+				group.children[0].material.dispose();
+				group.children[0].geometry.dispose();
+			    scene.remove(group.children[0]);
+			    group.remove(group.children[0]);
+			}
+			group = null;
 			group = new THREE.Group();
 			scene.add(group);
 			network = [];
@@ -820,7 +830,7 @@
 		
 			// This is what highlights the cubes when the mouse is over an object
 			window.addEventListener( "mousemove", highlightObject, false );
-			window.addEventListener( "touchstart", highlightObject, false );
+			window.addEventListener( "touchmove", highlightObject, false );
 
 			// Turn off frozen opacity, give separate function?
 			window.addEventListener( "click", function(){if(opacity) opacity = false;} );
@@ -962,7 +972,7 @@
 					selectedObject.material.color = selectedObject.original;
 
 				// set back to non transparent
-				if(selectedObject.number > 783 && !opacity)
+				if(selectedObject.number > 783 && network[selectedObject.layer].view == false)
 					for (let v = 0; v < network[selectedObject.layer].length; v++)
 	                {
 	                	if (v != selectedObject.channel)
@@ -993,11 +1003,21 @@
         
                 if ( res && res.object ) {
                     selectedObject = res.object;
-                    if (selectedObject.number != null)
+
+                    if (selectedObject.layer != null)
                     	res.object.material.color = highlight;
+                    else
+                    	return;
 
                     if(selectedObject.number > 783)  {
-                        //console.log(selectedObject.number);
+
+                        window.addEventListener( "click", function() {
+                        	if (selectedObject == null || network[selectedObject.layer] == null)
+                        		return;
+		                	if(network[selectedObject.layer].view == false) 
+		                		network[selectedObject.layer].view = true; 
+		                	else 
+		                		network[selectedObject.layer].view = false; });
 
                         getLinesForCube(selectedObject);
 
@@ -1013,7 +1033,7 @@
 	                    	    	drawLine(lines[line].from.position, lines[line].to.position);
 	                    	}
 
-	                    if (!opacity)
+	                    if (network[selectedObject.layer].view == false)
 	                    {
 		                    // set the rest of the channels in layer as transparent
 		                    for (let v = 0; v < network[selectedObject.layer].length; v++)
@@ -1025,8 +1045,6 @@
 		                    	}
 		                    }
 		                }
-
-	                    window.addEventListener( "click", function(){if(opacity) opacity = false; else opacity = true;} );
                     }
                 }
 				
@@ -1067,7 +1085,12 @@
 		function removeLines()
 		{
 			for (let k = 0; k < linesInScene.length; k++)
+			{
+				linesInScene[k].material.dispose();
+				linesInScene[k].geometry.dispose();
 				scene.remove( linesInScene[k] );
+			}
+			linesInScene.dispose();
 			linesInScene = [];
 		}
 		
