@@ -978,7 +978,7 @@
 	                	if (v != selectedObject.channel)
 	                	{
 	                		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
-	                			network[selectedObject.layer][v][i].material.opacity = 1;
+	                			network[selectedObject.layer][v][i].visible = true;
 	                	}
 	                }
 
@@ -1024,12 +1024,12 @@
                         if(!model.getLayer('', whichLayer(selectedObject.number)).name.includes("pool"))
 	                    	for(let line = 0; line < lines.length; line++) {
 	                    		// if cube isn't transparent
-	                    		if (lines[line].to.material.opacity > .5)
+	                    		if (lines[line].to.visible == true)
 	                    	    	drawLine(lines[line].from.position, lines[line].to.position, allColors[selectedObject.number].lineColors[line]);
 	                    	}
 	                    else
 	                    	for(let line = 0; line < lines.length; line++) {
-	                    		if (lines[line].to.material.opacity > .5)
+	                    		if (lines[line].to.visible == true)
 	                    	    	drawLine(lines[line].from.position, lines[line].to.position);
 	                    	}
 
@@ -1041,7 +1041,7 @@
 		                    	if (v != selectedObject.channel)
 		                    	{
 		                    		for (let i = 0; i < network[selectedObject.layer][v].length; i++)
-		                    			network[selectedObject.layer][v][i].material.opacity = 0.03;
+		                    			network[selectedObject.layer][v][i].visible = false;
 		                    	}
 		                    }
 		                }
