@@ -9,7 +9,7 @@ A graphical neural network builder made with TensorFlow JS and ThreeJS. Works be
 - Right panel customizes network
   * Add layers, reset model
   * Change colors
-  * Turn off visualization updates
+  * Turn off training visualization updates
 - Train button: train network in real time on dataset
 - Current button: refreshes visualization to most recent weights
 - Prev and Next: Move through the dataset and visualize their input into the network
