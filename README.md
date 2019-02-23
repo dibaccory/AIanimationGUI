@@ -1,6 +1,6 @@
 # TensorBlocks
 
-A neural network builder. Works best on Chrome or Mozilla Firefox.</br>
+A graphical neural network builder made in TensorFlow JS and ThreeJS. Works best on Chrome or Mozilla Firefox.</br>
 [Website](http://tensorblocks.com)
 
 
