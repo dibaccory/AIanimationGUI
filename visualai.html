@@ -35,7 +35,7 @@
 		var waitOver = false;						// when 1st colors are ready
 		var IMG;									// holds current input img
 		var imgNum = 5;								// image number from dataset
-		var useMap = 3;								// color space being used
+		var useMap = 1;								// color space being used
 		var gui;									// dat gui
 		var highlight = new THREE.Color ( 1,0,0 );  // Object highlight for raycaster
 		var network = [];							// for layer and channel control: [layer][channel][neuron]
@@ -57,7 +57,7 @@
 
 
 		let colorSelect = {
-      		map : "Jet"
+      		map : "Viridis"
         };
 
         let trainSelect = {
@@ -1233,7 +1233,7 @@
         
 	</script>
 	<div id="info">
-		Super Awesome Convolutional Neural Network Visualizer<br>
+		TensorBlocks: A Neural Network Visualizer<br>
 		By: Jonathon Rice, Richard DiBacco, Soliman Alnaizy<br>
 		<button onclick="startTrain();">Train</button>
 		<!-- <button onclick="pause();">Pause</button>

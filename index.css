@@ -1,10 +1,11 @@
 canvas { width: 100%; height: 100% }
 body {
 	font-family: Monospace;
-	background-color: #1A8FCF;
+	background-color: #555555;
 	margin: 0px;
 	overflow: hidden;
-	background-image: linear-gradient(#1A8FCF,#D1236A);
+	/*background-image: linear-gradient(#1A8FCF,#D1236A);*/
+	background-image: linear-gradient(#555555,#111111);
 }
 #info {
 	font-size: 18px;
