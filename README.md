@@ -1,6 +1,6 @@
 # TensorBlocks
 
-An easy way to visualize how a convolutional neural network would look like. Works best on Chrome or Mozilla Firefox.</br>
+A neural network builder. Works best on Chrome or Mozilla Firefox.</br>
 [Website](http://tensorblocks.com)
 
 
