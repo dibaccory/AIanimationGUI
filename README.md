@@ -17,7 +17,7 @@ A graphical neural network builder made with TensorFlow JS and ThreeJS. Works be
 - Hover over a layer slice (channel) to see it better
   * Click on the slice to keep other slices hidden
 
-## Roadmap:
+## Roadmap
 
 - Color connections
 - Visibility
