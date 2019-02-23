@@ -3,6 +3,8 @@
 A graphical neural network builder made with TensorFlow JS and ThreeJS. Works best on Chrome or Mozilla Firefox.</br>
 [Website](http://tensorblocks.com)
 
+![Prototype](images/model2.PNG)
+
 ## Application Instructions
 - Right panel customizes network
   * Add layers, reset model
@@ -14,8 +16,6 @@ A graphical neural network builder made with TensorFlow JS and ThreeJS. Works be
 - Hover over a neuron to see its input connections
 - Hover over a layer slice (channel) to see it better
   * Click on the slice to keep other slices hidden
-
-![Prototype](images/model2.PNG)
 
 ## Roadmap:
 
