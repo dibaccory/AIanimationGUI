@@ -19,12 +19,14 @@ A graphical neural network builder made with TensorFlow JS and ThreeJS. Works be
 
 ## Roadmap:
 
-- <del>Color connections</del>, visibility<br>
-- Drag and drop layers together<br>
-- Import/Export models<br>
-- More datasets<br>
-- Visualization tools<br>
-- Large networks, new layers<br>
-- Log and rank models<br>
-- Import and connect datasets<br>
-- <i>Aesthetics</i><br>
+- Color connections
+- Visibility
+- Dataset performance evaluation
+- Drag and drop layers into the model
+- Import/Export models in python
+- Provide more datasets
+- Visualization tools
+- Support larger networks, new layers
+- Log and rank models
+- Import and connect custom datasets
+- <i>Aesthetics</i>
