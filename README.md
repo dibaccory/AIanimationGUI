@@ -7,6 +7,7 @@ An easy way to visualize how a convolutional neural network would look like. Wor
 ![Prototype](images/model2.PNG)
 
 Roadmap:
+
     - <del>Color connections</del>, visibility<br>
 		- Drag and drop layers together<br>
 		- Import/Export models<br>
